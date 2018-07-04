@@ -1,16 +1,28 @@
 #include "htsmodel.h"
 #include "element.h"
 #include "elementjunction.h"
+#include "iboundarycondition.h"
+#include "htscomponent.h"
+
+using namespace std;
 
 void HTSModel::update()
 {
   if(m_currentDateTime < m_endDateTime)
   {
-    prepareForNextTimeStep();
+
+    applyBoundaryConditions(m_currentDateTime);
+
+    //Retrieve external data from other coupled models
+    if(m_retrieveCouplingDataFunction)
+    {
+      (*m_retrieveCouplingDataFunction)(this, m_currentDateTime);
+    }
+
+    if(m_component)
+      m_component->applyInputValues();
 
     m_timeStep = computeTimeStep();
-
-    applyBoundaryConditions(m_currentDateTime + m_timeStep / 86400.0);
 
     //Solve the transport for each element
     {
@@ -42,13 +54,20 @@ void HTSModel::update()
       }
     }
 
+    m_prevDateTime = m_currentDateTime;
+    m_currentDateTime = m_currentDateTime + m_timeStep / 86400.0;
 
-    m_currentDateTime +=  m_timeStep / 86400.0;
+    prepareForNextTimeStep();
 
     if(m_currentDateTime >= m_nextOutputTime)
     {
       writeOutput();
-      m_nextOutputTime += m_outputInterval / 86400.0;
+      m_nextOutputTime = std::min(m_nextOutputTime + m_outputInterval / 86400.0 , m_endDateTime);
+    }
+
+    if(m_verbose)
+    {
+      printStatus();
     }
   }
 }
@@ -56,22 +75,35 @@ void HTSModel::update()
 void HTSModel::prepareForNextTimeStep()
 {
 
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+  m_minTemp = std::numeric_limits<double>::max();
+  m_maxTemp = std::numeric_limits<double>::lowest();
+
+  std::fill(m_maxSolute.begin(), m_maxSolute.end(), m_maxTemp);
+  std::fill(m_minSolute.begin(), m_minSolute.end(), m_minTemp);
+
   for(size_t i = 0 ; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
+    element->computeHeatBalance(m_timeStep);
+    m_totalHeatBalance += element->totalHeatBalance;
+    m_totalRadiationHeatBalance += element->totalRadiationFluxesHeatBalance;
+    m_totalExternalHeatFluxBalance += element->totalExternalHeatFluxesBalance;
 
-    {
-      element->prevTemperature.copy(element->temperature);
-    }
+    element->prevTemperature.copy(element->temperature);
+
+    m_minTemp = min(m_minTemp , element->temperature.value);
+    m_maxTemp = max(m_maxTemp , element->temperature.value);
 
     for(size_t j = 0; j < m_solutes.size(); j++)
     {
-      {
-        element->prevSoluteConcs[j].copy(element->soluteConcs[j]);
-      }
+      element->computeSoluteBalance(m_timeStep, j);
+      m_totalSoluteMassBalance[j] += element->totalSoluteMassBalance[j];
+      m_totalExternalSoluteFluxMassBalance[j] += element->totalExternalSoluteFluxesMassBalance[j];
+
+      element->prevSoluteConcs[j].copy(element->soluteConcs[j]);
+
+      m_minSolute[j] = min(m_minSolute[j] , element->soluteConcs[j].value);
+      m_maxSolute[j] = max(m_maxSolute[j] , element->soluteConcs[j].value);
     }
   }
 
@@ -80,6 +112,15 @@ void HTSModel::prepareForNextTimeStep()
 void HTSModel::applyInitialConditions()
 {
 
+  //Initialize heat and solute balance trackers
+  m_totalHeatBalance = 0.0;
+  m_totalRadiationHeatBalance = 0.0;
+  m_totalExternalHeatFluxBalance = 0.0;
+
+  std::fill(m_totalSoluteMassBalance.begin(), m_totalSoluteMassBalance.end(), 0.0);
+  std::fill(m_totalExternalSoluteFluxMassBalance.begin(), m_totalExternalSoluteFluxMassBalance.end(), 0.0);
+
+  applyBoundaryConditions(m_currentDateTime);
 
   //Write initial output
   writeOutput();
@@ -90,7 +131,30 @@ void HTSModel::applyInitialConditions()
 
 void HTSModel::applyBoundaryConditions(double dateTime)
 {
+  //reset external fluxes
+#ifdef USE_OPENMMP
+#pragma omp parallel for
+#endif
+  for(size_t i = 0 ; i < m_elements.size(); i++)
+  {
+    Element *element = m_elements[i];
+    element->externalHeatFluxes = 0.0;
+    element->radiationFluxes = 0.0;
 
+    for(size_t j = 0; j < m_solutes.size(); j++)
+    {
+      element->externalSoluteFluxes[j] = 0.0;
+    }
+  }
+
+#ifdef USE_OPENMMP
+#pragma omp parallel for
+#endif
+  for(size_t i = 0; i < m_boundaryConditions.size() ; i++)
+  {
+    IBoundaryCondition *boundaryCondition = m_boundaryConditions[i];
+    boundaryCondition->applyBoundaryConditions(dateTime);
+  }
 }
 
 double HTSModel::computeTimeStep()
@@ -99,9 +163,13 @@ double HTSModel::computeTimeStep()
 
   double maxCourantFactor = 0.0;// Δx / v (s^-1)
 
-  if(m_useAdaptiveTimeStep)
+  if(m_numCurrentInitFixedTimeSteps < m_numInitFixedTimeSteps)
   {
-
+    timeStep = m_minTimeStep;
+    m_numCurrentInitFixedTimeSteps++;
+  }
+  else if(m_useAdaptiveTimeStep)
+  {
 
 #ifdef USE_OPENMP
 #pragma omp parallel for
@@ -121,13 +189,8 @@ double HTSModel::computeTimeStep()
       }
     }
 
-    timeStep = maxCourantFactor ? m_timeStepRelaxationFactor / maxCourantFactor : m_maxTimeStep;\
+    timeStep = maxCourantFactor ? m_timeStepRelaxationFactor / maxCourantFactor : m_maxTimeStep;
 
-    if(m_numCurrentInitFixedTimeSteps < m_numInitFixedTimeSteps)
-    {
-      timeStep = std::min(timeStep, m_minTimeStep);
-      m_numCurrentInitFixedTimeSteps++;
-    }
   }
 
   double nextTime = m_currentDateTime + timeStep / 86400.0;
@@ -141,7 +204,6 @@ double HTSModel::computeTimeStep()
 
   return timeStep;
 }
-
 
 void HTSModel::solveHeatTransport(double timeStep)
 {
@@ -162,7 +224,7 @@ void HTSModel::solveHeatTransport(double timeStep)
 
   //Solve using ODE solver
   SolverUserData solverUserData; solverUserData.model = this; solverUserData.variableIndex = -1;
-  m_solver->solve(currentTemperatures, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
+  m_heatSolver->solve(currentTemperatures, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
                   outputTemperatures, &HTSModel::computeDTDt, &solverUserData);
 
   //Apply computed values;
@@ -199,9 +261,8 @@ void HTSModel::solveSoluteTransport(int soluteIndex, double timeStep)
 
   //Solve using ODE solver
   SolverUserData solverUserData; solverUserData.model = this; solverUserData.variableIndex = soluteIndex;
-  m_solver->solve(outputSoluteConcs, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
+  m_soluteSolvers[soluteIndex]->solve(outputSoluteConcs, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
                   outputSoluteConcs, &HTSModel::computeDSoluteDt, &solverUserData);
-
 
   //Apply computed values;
 #ifdef USE_OPENMP

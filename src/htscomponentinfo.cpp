@@ -30,10 +30,10 @@ HTSComponentInfo::HTSComponentInfo(QObject *parent)
   GeometryFactory::registerGDAL();
 
   setId("Hyporheic Transient Storage Temperature Model 1.0.0");
-  setCaption("Hyporheic Transient Storage Model Component");
+  setCaption("HTS Component");
   setIconFilePath("./../../resources/images/hydrocouplecomposer.png");
   setDescription("A one-dimensional channel heat and solute transport model.");
-  setCategory("Hydrodyanmics/Heat");
+  setCategory("Hydrodyanmics\\Heat Transport");
   setCopyright("");
   setVendor("");
   setUrl("www.hydrocouple.org");

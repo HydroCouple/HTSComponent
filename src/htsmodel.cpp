@@ -24,6 +24,7 @@
 #include "element.h"
 #include "elementjunction.h"
 #include "spatial/edge.h"
+#include "iboundarycondition.h"
 
 using namespace std;
 
@@ -31,18 +32,30 @@ HTSModel::HTSModel(HTSComponent *component)
   : QObject(component),
     m_timeStep(0.0001), //seconds
     m_maxTimeStep(0.5), //seconds
-    m_minTimeStep(0.001), //seconds
+    m_minTimeStep(0.001), //seconds,
     m_timeStepRelaxationFactor(0.8),
     m_numInitFixedTimeSteps(2),
     m_numCurrentInitFixedTimeSteps(0),
+    m_printFrequency(10),
+    m_currentPrintCount(0),
+    m_flushToDiskFrequency(10),
+    m_currentflushToDiskCount(0),
+    m_computeDispersion(false),
     m_useAdaptiveTimeStep(true),
-    m_converged(false),
-    m_solver(nullptr),
-    m_waterDensity(1.0), //kg/m^3
-    m_cp(4187.0), //4187.0 J/kg/C
+    m_verbose(false),
+    m_numHeatElementJunctions(0),
+    m_heatSolver(nullptr),
+    m_waterDensity(1000.0), //kg/m^3
+    m_cp(4184.0), //4187.0 J/kg/C
+    m_sedDensity(1670),
+    m_sedCp(1807),
+    #ifdef USE_NETCDF
+    m_outputNetCDF(nullptr),
+    #endif
+    m_retrieveCouplingDataFunction(nullptr),
     m_component(component)
 {
-  m_solver = new ODESolver(1, ODESolver::RKQS);
+  m_heatSolver = new ODESolver(1, ODESolver::CVODE_ADAMS);
 }
 
 HTSModel::~HTSModel()
@@ -61,8 +74,22 @@ HTSModel::~HTSModel()
   m_elementJunctions.clear();
   m_elementJunctionsById.clear();
 
-  if(m_solver)
-    delete m_solver;
+  if(m_heatSolver)
+    delete m_heatSolver;
+
+  for(size_t i = 0; i < m_soluteSolvers.size(); i++)
+  {
+    delete m_soluteSolvers[i];
+  }
+
+  m_soluteSolvers.clear();
+
+  closeOutputFiles();
+
+  for(IBoundaryCondition *boundaryCondition : m_boundaryConditions)
+    delete boundaryCondition;
+
+  m_boundaryConditions.clear();
 }
 
 double HTSModel::minTimeStep() const
@@ -146,9 +173,14 @@ double HTSModel::currentDateTime() const
   return m_currentDateTime;
 }
 
-ODESolver *HTSModel::solver() const
+ODESolver *HTSModel::heatSolver() const
 {
-  return m_solver;
+  return m_heatSolver;
+}
+
+std::vector<ODESolver*> HTSModel::soluteSolvers() const
+{
+  return m_soluteSolvers;
 }
 
 double HTSModel::waterDensity() const
@@ -180,11 +212,24 @@ void HTSModel::setNumSolutes(int numSolutes)
 {
   if(numSolutes >= 0)
   {
+
+    for(size_t i = 0; i < m_soluteSolvers.size(); i++)
+    {
+      delete m_soluteSolvers[i];
+    }
+
+    m_soluteSolvers.clear();
+
     m_solutes.resize(numSolutes);
+    m_maxSolute.resize(numSolutes);
+    m_minSolute.resize(numSolutes);
+    m_totalSoluteMassBalance.resize(numSolutes);
+    m_totalExternalSoluteFluxMassBalance.resize(numSolutes);
 
     for(size_t i = 0 ; i < m_solutes.size(); i++)
     {
-      m_solutes[i] = "Solute_" + (i + 1);
+      m_soluteSolvers.push_back(new ODESolver(m_elements.size(), ODESolver::CVODE_ADAMS));
+      m_solutes[i] = "Solute_" + std::to_string(i + 1);
     }
 
 #ifdef USE_OPENMP
@@ -328,13 +373,25 @@ Element *HTSModel::getElement(int index)
   return m_elements[index];
 }
 
+RetrieveCouplingData HTSModel::retrieveCouplingDataFunction() const
+{
+  return m_retrieveCouplingDataFunction;
+}
+
+void HTSModel::setRetrieveCouplingDataFunction(RetrieveCouplingData retrieveCouplingDataFunction)
+{
+  m_retrieveCouplingDataFunction = retrieveCouplingDataFunction;
+}
+
 bool HTSModel::initialize(list<string> &errors)
 {
   bool initialized = initializeInputFiles(errors) &&
                      initializeTimeVariables(errors) &&
                      initializeElements(errors) &&
                      initializeSolver(errors) &&
-                     initializeOutputFiles(errors);
+                     initializeOutputFiles(errors) &&
+                     initializeBoundaryConditions(errors);
+
 
   if(initialized)
   {
@@ -347,6 +404,12 @@ bool HTSModel::initialize(list<string> &errors)
 bool HTSModel::finalize(std::list<string> &errors)
 {
   closeOutputFiles();
+
+  for(IBoundaryCondition *boundaryCondition : m_boundaryConditions)
+    delete boundaryCondition;
+
+  m_boundaryConditions.clear();
+
   return true;
 }
 
@@ -370,7 +433,7 @@ bool HTSModel::initializeTimeVariables(std::list<string> &errors)
     return false;
   }
 
-  if(m_minTimeStep >= m_maxTimeStep)
+  if(m_minTimeStep > m_maxTimeStep)
   {
     errors.push_back("");
     return false;
@@ -380,6 +443,9 @@ bool HTSModel::initializeTimeVariables(std::list<string> &errors)
 
   m_currentDateTime = m_startDateTime;
   m_nextOutputTime = m_currentDateTime;
+
+  m_currentPrintCount = 0;
+  m_currentflushToDiskCount = 0;
 
   return true;
 }
@@ -416,11 +482,23 @@ bool HTSModel::initializeElements(std::list<string> &errors)
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-  for(size_t i = 0 ; i < m_elements.size()  ; i++)
+  for(size_t i = 0; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
     element->index = i;
     element->initialize();
+  }
+
+  //Set tempearture continuity junctions
+  m_numHeatElementJunctions = 0;
+
+  //Number of junctions where continuity needs to be enforced.
+  m_numSoluteElementJunctions.resize(m_solutes.size(), 0);
+
+  for(size_t i = 0 ; i < m_elementJunctions.size()  ; i++)
+  {
+    ElementJunction *elementJunction = m_elementJunctions[i];
+    elementJunction->index = i;
   }
 
   return true;
@@ -428,8 +506,49 @@ bool HTSModel::initializeElements(std::list<string> &errors)
 
 bool HTSModel::initializeSolver(std::list<string> &errors)
 {
-  m_solver->setSize(m_elements.size());
-  m_solver->initialize();
+  m_heatSolver->setSize(m_elements.size());
+  m_heatSolver->initialize();
+
+  for(size_t i = 0; i < m_soluteSolvers.size(); i++)
+  {
+    ODESolver *solver =  m_soluteSolvers[i];
+    solver->setSize(m_elements.size());
+    solver->initialize();
+  }
 
   return true;
 }
+
+bool HTSModel::initializeBoundaryConditions(std::list<string> &errors)
+{
+  for(size_t i = 0; i < m_boundaryConditions.size() ; i++)
+  {
+    IBoundaryCondition *boundaryCondition = m_boundaryConditions[i];
+    boundaryCondition->clear();
+    boundaryCondition->findAssociatedGeometries();
+    boundaryCondition->prepare();
+  }
+
+  return true;
+}
+
+bool HTSModel::findProfile(Element *from, Element *to, std::list<Element *> &profile)
+{
+  for(Element *outgoing : from->downstreamJunction->outgoingElements)
+  {
+    if(outgoing == to)
+    {
+      profile.push_back(from);
+      profile.push_back(outgoing);
+      return true;
+    }
+    else if(findProfile(outgoing, to, profile))
+    {
+      profile.push_front(from);
+      return true;
+    }
+  }
+
+  return false;
+}
+

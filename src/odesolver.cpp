@@ -21,11 +21,17 @@
 #include "stdafx.h"
 #include "odesolver.h"
 
+#ifdef USE_CVODE
 #include <cvode/cvode.h>
-#include <nvector/nvector_openmp.h>
 #include <nvector/nvector_serial.h>
+#endif
 
-#ifdef USE_OPENMP
+#ifdef USE_CVODE_OPENMP
+    #include <nvector/nvector_openmp.h>
+#endif
+
+
+#if defined(USE_OPENMP) || defined(USE_CVODE_OPENMP)
 #include <omp.h>
 #endif
 
@@ -80,6 +86,8 @@ void ODESolver::initialize()
       {
 
         m_cvodeSolver = CVodeCreate(CV_ADAMS, CV_FUNCTIONAL);
+        CVodeSetMaxHnilWarns(m_cvodeSolver,0);
+
         m_solver = &ODESolver::solveCVODE;
 
 #ifdef USE_CVODE_OPENMP
@@ -100,6 +108,7 @@ void ODESolver::initialize()
       {
 
         m_cvodeSolver = CVodeCreate(CV_BDF, CV_FUNCTIONAL);
+        CVodeSetMaxHnilWarns(m_cvodeSolver,0);
         m_solver = &ODESolver::solveCVODE;
 
 #ifdef USE_CVODE_OPENMP
@@ -254,6 +263,8 @@ int ODESolver::rk4(double y[], int n, double t, double dt, double yout[], Comput
   {
     yout[i] = y[i] + dt6 * (dydt[i] + dyt[i] + 2.0 * dym[i]); //weights.
   }
+
+  m_currentIterations = 1;
 
   delete[] yt;
   delete[] dyt;
@@ -517,9 +528,6 @@ int ODESolver::solveCVODE(double y[], int n, double t, double dt, double yout[],
   CVodeGetNumSteps(m_cvodeSolver, &currentIterations);
 
   m_currentIterations = currentIterations;
-
-  if(m_print)
-    N_VPrint_Serial(ycvout);
 
 #ifdef USE_CVODE_OPENMP
   N_VDestroy_OpenMP(ycvout);

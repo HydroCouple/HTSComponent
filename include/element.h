@@ -15,13 +15,6 @@ class HTSModel;
 struct Element
 {
 
-    enum Bank
-    {
-      Left,
-      Right,
-      Lumped
-    };
-
     /*!
     * \brief Element - Creates an instance of the control volume element used to represent a computational
     * element in a reach.
@@ -63,24 +56,24 @@ struct Element
    double z;
 
    /*!
-    * \brief temperature
+    * \brief temperature  (°C)
     */
    Variable temperature;
 
    /*!
-    * \brief prevTemperature
+    * \brief prevTemperature  (°C)
     */
    Variable prevTemperature;
 
    /*!
-    * \brief groundTemperature
+    * \brief mainChannelTemperature  (°C)
     */
-   double groundTemperature;
+   double mainChannelTemperature;
 
    /*!
-    * \brief mainChannelTemperature
+    * \brief groundTemperature  (°C)
     */
-   double channelTemperature;
+   double groundTemperature;
 
    /*!
     * \brief numSolutes - Number of solutes
@@ -98,34 +91,29 @@ struct Element
    Variable *prevSoluteConcs;
 
    /*!
-    * \brief mainChannelSoluteConcs
+    * \brief mainChannelSoluteConcs [kg/m^3]
     */
-   double *channelSoluteConcs;
+   double *mainChannelSoluteConcs;
 
    /*!
-    * \brief sedimentDensity
+    * \brief groundSoluteConcs [kg/m^3]
     */
-   double sedimentDensity;
+   double *groundSoluteConcs;
 
    /*!
-    * \brief sedimentSpecificHeatCapacity
+    * \brief temperatureExchangeCoefficient (m^2/s)
     */
-   double sedimentSpecificHeatCapacity;
+   double sedThermalDiffCoefficient;
 
    /*!
-    * \brief coefficientAdvectiveTransport
+    * \brief soluteExchangeCoefficients (m^2/s)
     */
-   double coefficientAdvectiveTransport;
+   double *sedSoluteDiffCoefficients;
 
    /*!
-    * \brief sedimentCoefficientofThermalDiffusivity
+    * \brief mainChannelAdvectionCoeff (m^3/s)
     */
-   double sedimentCoefficientofThermalDiffusivity;
-
-   /*!
-    * \brief groundConductionDepth
-    */
-   double groundConductionDepth;
+   double mainChannelAdvectionCoeff;
 
    /*!
     * \brief fromJunction
@@ -138,41 +126,84 @@ struct Element
    ElementJunction *downstreamJunction;
 
    /*!
-    * \brief length
+    * \brief length (m)
     */
    double length;
 
    /*!
-    * \brief depth
+    * \brief depth  (m)
     */
    double depth;
 
    /*!
-    * \brief xSectionArea
+    * \brief xSectionArea (m^2)
     */
    double xSectionArea;
 
    /*!
-    * \brief width
+    * \brief width  (m)
     */
    double width;
 
    /*!
-    * \brief beta- Fraction of the channel width that acts as a surface transient zone.
+    * \brief mainChannelConductionHeat (J/s)
     */
-   double beta;
-
-   Bank bank;
+   double mainChannelConductionHeat;
 
    /*!
-    * \brief externalHeatFluxes of J / s
+    * \brief groundConductionHeat (J/s)
+    */
+   double groundConductionHeat;
+
+   /*!
+    * \brief advectionHeat (J/s)
+    */
+   double advectionHeat;
+
+   /*!
+    * \brief externalHeatFluxes of (J/s)
     */
    double externalHeatFluxes;
 
    /*!
-    * \brief externalSoluteFluxes of the form m^3. C / s
+    * \brief externalSoluteFluxes (W/m^2)
+    */
+   double radiationFluxes;
+
+   /*!
+    * \brief externalSoluteFluxes of the form (kg/s)
     */
    double *externalSoluteFluxes;
+
+   /*!
+    * \brief heatBalance (KJ)
+    */
+   double totalHeatBalance;
+
+   /*!
+    * \brief totalRadiationHeatBalance (KJ)
+    */
+   double totalRadiationFluxesHeatBalance;
+
+   /*!
+    * \brief totalExternalHeatFluxesBalance (KJ)
+    */
+   double totalExternalHeatFluxesBalance;
+
+   /*!
+    * \brief soluteMassBalance (kg)
+    */
+   double *totalSoluteMassBalance;
+
+   /*!
+    * \brief totalExternalSoluteFluxesMassBalance  (kg)
+    */
+   double *totalExternalSoluteFluxesMassBalance;
+
+   /*!
+    * \brief groundConductionDepth (m)
+    */
+   double groundConductionDepth;
 
    /*!
     * \brief model
@@ -213,6 +244,16 @@ struct Element
     */
    double computeDispersionFactor() const;
 
+   /*!
+    * \brief computeHeatBalance
+    */
+   void computeHeatBalance(double timeStep);
+
+   /*!
+    * \brief computeSoluteBalance
+    * \param soluteIndex
+    */
+   void computeSoluteBalance(double timeStep, int soluteIndex);
 };
 
 #endif // ELEMENT_H

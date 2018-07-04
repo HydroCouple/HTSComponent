@@ -10,11 +10,16 @@ TARGET = HTSComponent
 QT -= gui
 QT += testlib
 
+#Added for faster compilation
+*msvc* { # visual studio spec filter
+      QMAKE_CXXFLAGS += /MP /O2
+  }
 
-#DEFINES += HTSCOMPONENT_LIBRARY
+DEFINES += HTSCOMPONENT_LIBRARY
 DEFINES += USE_OPENMP
 DEFINES += USE_MPI
 DEFINES += USE_CVODE
+DEFINES += USE_NETCDF
 #DEFINES += USE_CVODE_OPENMP
 
 #Compile as library or executable
@@ -28,10 +33,7 @@ contains(DEFINES,HTSCOMPONENT_LIBRARY){
 }
 
 CONFIG += c++11
-
-linux{
 CONFIG += debug_and_release
-}
 
 PRECOMPILED_HEADER = ./include/stdafx.h
 
@@ -51,7 +53,18 @@ HEADERS += ./include/stdafx.h\
            ./include/odesolver.h \
            ./include/test/htscomponenttest.h \
            ./include/variable.h \
-           ./include/element.h
+           ./include/element.h \
+           ./include/iboundarycondition.h \
+           ./include/abstracttimeseriesbc.h \
+           ./include/iboundarycondition.h \
+           ./include/pointsrctimeseriesbc.h \
+           ./include/nonpointsrctimeseriesbc.h \
+           ./include/hydraulicstimeseriesbc.h \
+           ./include/radiativefluxtimeseriesbc.h \
+           ./include/boundarycondition.h \
+           ./include/elementinput.h \
+           ./include/elementoutput.h
+
 
 SOURCES +=./src/stdafx.cpp \
           ./src/htscomponent.cpp \
@@ -63,8 +76,15 @@ SOURCES +=./src/stdafx.cpp \
           ./src/elementjunction.cpp \
           ./src/test/htscomponenttest.cpp \
           ./src/htsmodelio.cpp \
-          ./src/htscompute.cpp
-
+          ./src/htscompute.cpp \
+          ./src/abstracttimeseriesbc.cpp \
+          ./src/pointsrctimeseriesbc.cpp \
+          ./src/nonpointsrctimeseriesbc.cpp \
+          ./src/hydraulicstimeseriesbc.cpp \
+          ./src/radiativefluxtimeseriesbc.cpp \
+          ./src/boundarycondition.cpp \
+          ./src/elementinput.cpp \
+          ./src/elementoutput.cpp
 
 macx{
 
@@ -74,13 +94,14 @@ macx{
     contains(DEFINES, USE_CVODE){
 
     message("CVODE enabled")
-
-    INCLUDEPATH += ../cvode-3.1.0/include
-#    LIBS += -L../cvode-3.1.0/builddir/src/cvode -lsundials_cvode
     LIBS += -L/usr/local/lib -lsundials_cvode
      }
 
+    contains(DEFINES, USE_NETCDF){
+    message("NetCDF enabled")
     LIBS += -L/usr/local/lib -lnetcdf-cxx4
+
+    }
 
     contains(DEFINES,USE_OPENMP){
 
@@ -156,6 +177,33 @@ INCLUDEPATH += /usr/include \
 
 win32{
 
+    #Windows vspkg package manager installation path
+    VSPKGDIR = C:/vcpkg/installed/x64-windows
+
+    INCLUDEPATH += $${VSPKGDIR}/include \
+                $${VSPKGDIR}/include/gdal
+
+    contains(DEFINES, USE_CVODE){
+    message("CVODE enabled")
+    INCLUDEPATH += $${VSPKGDIR}/include/cvode
+    CONFIG(release, debug|release) {
+    LIBS += -L$${VSPKGDIR}/lib -lsundials_cvode
+        } else {
+    LIBS += -L$${VSPKGDIR}/debug/lib -lsundials_cvode
+        }
+    }
+
+    contains(DEFINES, USE_NETCDF){
+    message("NetCDF enabled")
+    CONFIG(release, debug|release) {
+        LIBS += -L$${VSPKGDIR}/lib -lnetcdf \
+                -L$${VSPKGDIR}/lib -lnetcdf-cxx4
+        } else {
+        LIBS += -L$${VSPKGDIR}/debug/lib -lnetcdf \
+                -L$${VSPKGDIR}/debug/lib -lnetcdf-cxx4
+        }
+    }
+    
     contains(DEFINES,USE_OPENMP){
 
         QMAKE_CFLAGS += -openmp

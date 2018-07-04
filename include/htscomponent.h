@@ -22,12 +22,23 @@
 
 #include "htscomponent_global.h"
 #include "htscomponentinfo.h"
-#include "core/abstractmodelcomponent.h"
+#include "temporal/abstracttimemodelcomponent.h"
 
+class Dimension;
+class HTSModel;
+class HCGeometry;
+class ElementInput;
+class ElementOutput;
+class Unit;
+class ElementHeatSourceInput;
 
-class HTSCOMPONENT_EXPORT HTSComponent : public AbstractModelComponent
+class HTSCOMPONENT_EXPORT HTSComponent : public AbstractTimeModelComponent,
+    public virtual HydroCouple::ICloneableModelComponent
 {
+
     Q_OBJECT
+
+    Q_INTERFACES(HydroCouple::ICloneableModelComponent)
 
   public:
 
@@ -65,12 +76,39 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractModelComponent
      */
     void finish() override;
 
+    /*!
+     * \brief modelInstance
+     * \return
+     */
+    HTSModel *modelInstance() const;
+
+    /*!
+     * \brief parent
+     * \return
+     */
+    HydroCouple::ICloneableModelComponent* parent() const override;
+
+    /*!
+     * \brief clone
+     * \return
+     */
+    HydroCouple::ICloneableModelComponent* clone() override;
+
+    /*!
+     * \brief clones
+     * \return
+     */
+    QList<HydroCouple::ICloneableModelComponent*> clones() const override;
+
   protected:
+
+    bool removeClone(HTSComponent *component);
+
 
     /*!
      * \brief intializeFailureCleanUp
      */
-    void intializeFailureCleanUp() override;
+    void initializeFailureCleanUp() override;
 
   private:
 
@@ -80,6 +118,11 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractModelComponent
     void createArguments() override;
 
     /*!
+     * \brief createInputFileArguments
+     */
+    void createInputFileArguments();
+
+    /*!
      * \brief initializeArguments
      * \param message
      * \return
@@ -87,9 +130,51 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractModelComponent
     bool initializeArguments(QString &message) override;
 
     /*!
+     * \brief initializeInputFilesArguments
+     * \param message
+     * \return
+     */
+    bool initializeInputFilesArguments(QString &message);
+
+    /*!
+     * \brief createGeometriesMap
+     */
+    void createGeometries();
+
+    /*!
      * \brief createInputs
      */
     void createInputs() override;
+
+    /*!
+     * \brief createMainChannelTemperatureInput
+     */
+    void createMainChannelTemperatureInput();
+
+    /*!
+     * \brief createWidthInput
+     */
+    void createWidthInput();
+
+    void createQHTSInput();
+
+    void createYHTSInput();
+
+    void createAlphaSedInput();
+
+    void createGroundTempInput();
+
+    void createGroundDepthInput();
+
+    /*!
+     * \brief createRadiationFluxInput
+     */
+    void createExternalRadiationFluxInput();
+
+    /*!
+     * \brief createExternalHeatFluxInput
+     */
+    void createExternalHeatFluxInput();
 
     /*!
      * \brief createOutputs
@@ -97,17 +182,48 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractModelComponent
     void createOutputs() override;
 
     /*!
-     * \brief updateOutputValues
-     * \param requiredOutputs
+     * \brief createMainChannelConductionHeatOutput
      */
-    void updateOutputValues(const QList<HydroCouple::IOutput*>& requiredOutputs) override;
+    void createMainChannelConductionHeatOutput();
 
+    /*!
+     * \brief createMainChannelAdvectionHeatOutput
+     */
+    void createMainChannelAdvectionHeatOutput();
 
   private:
 
+    IdBasedArgumentString *m_inputFilesArgument;
 
+    ElementInput *m_mainChannelTempInput,
+                 *m_widthInput,
+                 *m_QHTSInput,
+                 *m_YHTSInput,
+                 *m_alphaSediment,
+                 *m_groundTemp,
+                 *m_groundDepth;
 
+    Dimension *m_timeDimension,
+              *m_geometryDimension;
 
+    Unit *m_radiationFluxUnit,
+         *m_heatFluxUnit,
+         *m_temperatureUnit,
+         *m_diffCoeffUnit;
+
+    ElementOutput *m_mainChannelConductionHeat,
+                  *m_mainChannelAdvectionHeat;
+
+    ElementHeatSourceInput *m_externalRadiationFluxInput,
+                           *m_externalHeatFluxInput;
+
+    std::vector<QSharedPointer<HCGeometry>> m_elementGeometries;
+    std::vector<QSharedPointer<HCGeometry>> m_elementJunctionGeometries;
+    HTSModel *m_modelInstance;
+    HTSComponentInfo *m_HTSComponentInfo;
+
+    HTSComponent *m_parent;
+    QList<HydroCouple::ICloneableModelComponent*> m_clones;
 };
 
 #endif //HTSCOMPONENT_H
