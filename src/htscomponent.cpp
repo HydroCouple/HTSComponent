@@ -154,7 +154,12 @@ void HTSComponent::update(const QList<HydroCouple::IOutput *> &requiredOutputs)
   {
     setStatus(IModelComponent::Updating);
 
-    m_modelInstance->update();
+    double minConsumerTime = std::max(m_modelInstance->currentDateTime(), getMinimumConsumerTime());
+
+    while (m_modelInstance->currentDateTime() <= minConsumerTime )
+    {
+      m_modelInstance->update();
+    }
 
     updateOutputValues(requiredOutputs);
 
@@ -361,7 +366,7 @@ bool HTSComponent::initializeInputFilesArguments(QString &message)
 
     QString csvOutput = QString((*m_inputFilesArgument)["Output CSV File"]);
     if(!csvOutput.isEmpty() && !csvOutput.isNull())
-    m_modelInstance->setOutputCSVFile(QFileInfo(csvOutput));
+      m_modelInstance->setOutputCSVFile(QFileInfo(csvOutput));
 
     std::list<std::string> errors;
     bool initialized = m_modelInstance->initialize(errors);

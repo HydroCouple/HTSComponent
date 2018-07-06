@@ -156,14 +156,29 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractTimeModelComponent,
      */
     void createWidthInput();
 
+    /*!
+     * \brief createQHTSInput
+     */
     void createQHTSInput();
 
+    /*!
+     * \brief createYHTSInput
+     */
     void createYHTSInput();
 
+    /*!
+     * \brief createAlphaSedInput
+     */
     void createAlphaSedInput();
 
+    /*!
+     * \brief createGroundTempInput
+     */
     void createGroundTempInput();
 
+    /*!
+     * \brief createGroundDepthInput
+     */
     void createGroundDepthInput();
 
     /*!

@@ -20,7 +20,9 @@ DEFINES += USE_OPENMP
 DEFINES += USE_MPI
 DEFINES += USE_CVODE
 DEFINES += USE_NETCDF
+DEFINES += USE_CHPC
 #DEFINES += USE_CVODE_OPENMP
+
 
 #Compile as library or executable
 contains(DEFINES,HTSCOMPONENT_LIBRARY){
@@ -93,14 +95,13 @@ macx{
 
     contains(DEFINES, USE_CVODE){
 
-    message("CVODE enabled")
-    LIBS += -L/usr/local/lib -lsundials_cvode
-     }
+        message("CVODE enabled")
+           LIBS += -L/usr/local/lib -lsundials_cvode
+         }
 
-    contains(DEFINES, USE_NETCDF){
-    message("NetCDF enabled")
-    LIBS += -L/usr/local/lib -lnetcdf-cxx4
-
+        contains(DEFINES, USE_NETCDF){
+        message("NetCDF enabled")
+        LIBS += -L/usr/local/lib -lnetcdf-cxx4
     }
 
     contains(DEFINES,USE_OPENMP){
@@ -156,6 +157,14 @@ INCLUDEPATH += /usr/include \
          LIBS += -L/uufs/chpc.utah.edu/sys/installdir/hdf5/1.8.17-c7/lib -lhdf5 \
                  -L/uufs/chpc.utah.edu/sys/installdir/netcdf-cxx/4.3.0-c7/lib -lnetcdf_c++4 \
                  -L../hypre/build/lib -lHYPRE
+
+        contains(DEFINES, USE_CVODE){
+
+            message("CVODE enabled")
+
+            INCLUDEPATH += /uufs/chpc.utah.edu/sys/installdir/sundials/2.6.2-2.7.10py/include
+            LIBS += -L/uufs/chpc.utah.edu/sys/installdir/sundials/2.6.2-2.7.10py/lib -lsundials_cvode
+        }
 
          message("Compiling on CHPC")
      }

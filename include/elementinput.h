@@ -22,7 +22,6 @@
 #define ELEMENTINPUT_H
 
 #include "htscomponent_global.h"
-#include "spatiotemporal/timegeometryinput.h"
 #include "spatiotemporal/timegeometrymultiinput.h"
 
 #include <unordered_map>
@@ -30,7 +29,7 @@
 class HTSComponent;
 
 
-class HTSCOMPONENT_EXPORT ElementInput : public TimeGeometryInputDouble
+class HTSCOMPONENT_EXPORT ElementInput : public TimeGeometryMultiInputDouble
 {
     Q_OBJECT
 
@@ -59,7 +58,14 @@ class HTSCOMPONENT_EXPORT ElementInput : public TimeGeometryInputDouble
      * \brief setProvider
      * \param provider
      */
-    bool setProvider(HydroCouple::IOutput *provider) override;
+    bool addProvider(HydroCouple::IOutput *provider) override;
+
+    /*!
+     * \brief removeProvider
+     * \param provider
+     * \return
+     */
+    bool removeProvider(HydroCouple::IOutput *provider) override;
 
     /*!
      * \brief canConsume
@@ -105,8 +111,8 @@ class HTSCOMPONENT_EXPORT ElementInput : public TimeGeometryInputDouble
 
   private:
 
-    std::unordered_map<int,int> m_geometryMapping;
-    std::unordered_map<int,double> m_geometryMappingOrientation;
+    std::unordered_map<HydroCouple::IOutput*, std::unordered_map<int,int>> m_geometryMapping;
+    std::unordered_map<HydroCouple::IOutput*, std::unordered_map<int,double>> m_geometryMappingOrientation;
     HTSComponent *m_component;
     VariableType m_varType;
     int m_soluteIndex;
