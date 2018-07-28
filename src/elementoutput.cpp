@@ -6,7 +6,7 @@
  * \license
  * This file and its associated files, and libraries are free software.
  * You can redistribute it and/or modify it under the terms of the
- * Lesser GNU General Public License as published by the Free Software Foundation;
+ * Lesser GNU Lesser General Public License as published by the Free Software Foundation;
  * either version 3 of the License, or (at your option) any later version.
  * This file and its associated files is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.(see <http://www.gnu.org/licenses/> for details)
@@ -95,9 +95,9 @@ void ElementOutput::updateValues()
     case AdvectionHeat:
       {
 
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(size_t i = 0 ; i < m_geometries.size() ; i++)
         {
           Element *element = m_component->modelInstance()->getElement(i);
@@ -108,9 +108,9 @@ void ElementOutput::updateValues()
       break;
     case ChannelConductionHeat:
       {
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(size_t i = 0 ; i < m_geometries.size() ; i++)
         {
           Element *element = m_component->modelInstance()->getElement(i);
@@ -121,9 +121,9 @@ void ElementOutput::updateValues()
       break;
     case QHTS:
       {
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(size_t i = 0 ; i < m_geometries.size() ; i++)
         {
           Element *element = m_component->modelInstance()->getElement(i);
@@ -134,9 +134,9 @@ void ElementOutput::updateValues()
       break;
     case YHTS:
       {
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(size_t i = 0 ; i < m_geometries.size() ; i++)
         {
           Element *element = m_component->modelInstance()->getElement(i);
@@ -147,9 +147,9 @@ void ElementOutput::updateValues()
       break;
     case AlphaSed:
       {
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(size_t i = 0 ; i < m_geometries.size() ; i++)
         {
           Element *element = m_component->modelInstance()->getElement(i);
@@ -160,9 +160,9 @@ void ElementOutput::updateValues()
       break;
     case GroundTemperature:
       {
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(size_t i = 0 ; i < m_geometries.size() ; i++)
         {
           Element *element = m_component->modelInstance()->getElement(i);
@@ -173,9 +173,9 @@ void ElementOutput::updateValues()
       break;
     case GroundConductionDepth:
       {
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+//#ifdef USE_OPENMP
+//#pragma omp parallel for
+//#endif
         for(size_t i = 0 ; i < m_geometries.size() ; i++)
         {
           Element *element = m_component->modelInstance()->getElement(i);

@@ -6,7 +6,7 @@
  *  Runge Kutta solves from
  *  This file and its associated files and libraries are free software;
  *  you can redistribute it and/or modify it under the terms of the
- *  Lesser GNU General Public License as published by the Free Software Foundation;
+ *  Lesser GNU Lesser General Public License as published by the Free Software Foundation;
  *  either version 3 of the License, or (at your option) any later version.
  *  fvhmcompopnent.h its associated files is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,7 +41,7 @@
 
 ODESolver::ODESolver(int size, SolverType solverType)
   : m_size(size),
-    m_maxSteps(10000),
+    m_maxSteps(30000),
     m_order(6),
     m_safety(0.9),
     m_pgrow(-0.2),
@@ -503,9 +503,9 @@ int ODESolver::solveCVODE(double y[], int n, double t, double dt, double yout[],
   double *y0 =  N_VGetArrayPointer_Serial(m_cvy);
 #endif
 
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+  //#ifdef USE_OPENMP
+  //#pragma omp parallel for
+  //#endif
   for(int i = 0; i < n; i++)
   {
     y0[i] = y[i];

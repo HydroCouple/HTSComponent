@@ -198,8 +198,8 @@ void ElementInput::applyData()
 
   for(HydroCouple::IOutput *provider : providers())
   {
-    std::unordered_map<int,int> geomap = m_geometryMapping[provider];
-    std::unordered_map<int,double> geoorient = m_geometryMappingOrientation[provider];
+    std::unordered_map<int,int>& geomap = m_geometryMapping[provider];
+    std::unordered_map<int,double>& geoorient = m_geometryMappingOrientation[provider];
 
     ITimeGeometryComponentDataItem *timeGeometryDataItem = nullptr;
     IGeometryComponentDataItem *geometryDataItem = nullptr;

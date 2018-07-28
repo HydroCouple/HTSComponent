@@ -5,7 +5,7 @@
 *  \section Description
 *  This file and its associated files and libraries are free software;
 *  you can redistribute it and/or modify it under the terms of the
-*  Lesser GNU General Public License as published by the Free Software Foundation;
+*  Lesser GNU Lesser General Public License as published by the Free Software Foundation;
 *  either version 3 of the License, or (at your option) any later version.
 *  fvhmcompopnent.h its associated files is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -232,9 +232,9 @@ void HTSModel::setNumSolutes(int numSolutes)
       m_solutes[i] = "Solute_" + std::to_string(i + 1);
     }
 
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+    //#ifdef USE_OPENMP
+    //#pragma omp parallel for
+    //#endif
     for(size_t i = 0 ; i < m_elements.size()  ; i++)
     {
       Element *element = m_elements[i];
@@ -453,9 +453,9 @@ bool HTSModel::initializeTimeVariables(std::list<string> &errors)
 bool HTSModel::initializeElements(std::list<string> &errors)
 {
 
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+  //#ifdef USE_OPENMP
+  //#pragma omp parallel for
+  //#endif
   for(size_t i = 0 ; i < m_elementJunctions.size()  ; i++)
   {
     ElementJunction *elementJunction = m_elementJunctions[i];

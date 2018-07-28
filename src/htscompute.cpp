@@ -171,9 +171,6 @@ double HTSModel::computeTimeStep()
   else if(m_useAdaptiveTimeStep)
   {
 
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
     for(size_t i = 0 ; i < m_elements.size()  ; i++)
     {
       Element *element = m_elements[i];
@@ -182,9 +179,6 @@ double HTSModel::computeTimeStep()
 
       if(dispersionFactor > maxCourantFactor)
       {
-#ifdef USE_OPENMP
-#pragma omp atomic read
-#endif
         maxCourantFactor = dispersionFactor;
       }
     }
@@ -212,9 +206,9 @@ void HTSModel::solveHeatTransport(double timeStep)
   double *outputTemperatures = new double[m_elements.size()];
 
   //Set initial input and output values to current values.
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+  //#ifdef USE_OPENMP
+  //#pragma omp parallel for
+  //#endif
   for(size_t i = 0 ; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
@@ -228,9 +222,9 @@ void HTSModel::solveHeatTransport(double timeStep)
                   outputTemperatures, &HTSModel::computeDTDt, &solverUserData);
 
   //Apply computed values;
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+  //#ifdef USE_OPENMP
+  //#pragma omp parallel for
+  //#endif
   for(size_t i = 0 ; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
@@ -249,9 +243,9 @@ void HTSModel::solveSoluteTransport(int soluteIndex, double timeStep)
   double *outputSoluteConcs = new double[m_elements.size()];
 
   //Set initial values.
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+  //#ifdef USE_OPENMP
+  //#pragma omp parallel for
+  //#endif
   for(size_t i = 0 ; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
@@ -265,9 +259,9 @@ void HTSModel::solveSoluteTransport(int soluteIndex, double timeStep)
                   outputSoluteConcs, &HTSModel::computeDSoluteDt, &solverUserData);
 
   //Apply computed values;
-#ifdef USE_OPENMP
-#pragma omp parallel for
-#endif
+  //#ifdef USE_OPENMP
+  //#pragma omp parallel for
+  //#endif
   for(size_t i = 0 ; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
