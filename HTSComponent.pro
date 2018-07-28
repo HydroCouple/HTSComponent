@@ -205,7 +205,14 @@ win32{
     VCPKGDIR = C:/vcpkg/installed/x64-windows
 
     INCLUDEPATH += $${VCPKGDIR}/include \
-                $${VCPKGDIR}/include/gdal
+                   $${VCPKGDIR}/include/gdal
+
+
+    CONFIG(debug, debug|release) {
+    LIBS += -L$${VCPKGDIR}/debug/lib -lgdald
+        } else {
+    LIBS += -L$${VCPKGDIR}/lib -lgdal
+    }
 
     contains(DEFINES, USE_CVODE){
     message("CVODE enabled")
@@ -255,7 +262,7 @@ win32{
     }
 
     QMAKE_CXXFLAGS += /MP
-    QMAKE_LFLAGS += /MP /incremental /debug:fastlink
+    QMAKE_LFLAGS += /incremental /debug:fastlink
 
 }
 
@@ -280,21 +287,19 @@ CONFIG(debug, debug|release) {
    UI_DIR = $$DESTDIR/.ui
 
    macx{
-
     QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/build/debug/*HydroCoupleSDK.* ./build/debug/";
     LIBS += -L./../HydroCoupleSDK/build/debug -lHydroCoupleSDK
-     }
+   }
 
    linux{
-
     QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/build/debug/*HydroCoupleSDK.* ./build/debug/";
     LIBS += -L./../HydroCoupleSDK/build/debug -lHydroCoupleSDK
-     }
+   }
 
    win32{
-    QMAKE_POST_LINK += "copy ./../HydroCoupleSDK/build/debug/*HydroCoupleSDK.* ./build/debug/";
+    QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\build\debug\HydroCoupleSDK* .\build\debug"
     LIBS += -L./../HydroCoupleSDK/build/debug -lHydroCoupleSDK1
-     }
+   }
 }
 
 CONFIG(release, debug|release) {
@@ -311,15 +316,15 @@ CONFIG(release, debug|release) {
 
    macx{
     LIBS += -L./../HydroCoupleSDK/lib/macx -lHydroCoupleSDK
-     }
+   }
 
    linux{
     LIBS += -L./../HydroCoupleSDK/lib/linux -lHydroCoupleSDK
-     }
+   }
 
    win32{
     LIBS += -L./../HydroCoupleSDK/lib/win32 -lHydroCoupleSDK1
-     }
+   }
 
      contains(DEFINES,HTSCOMPONENT_LIBRARY){
          #MacOS
@@ -337,7 +342,7 @@ CONFIG(release, debug|release) {
          #Windows
          win32{
              DESTDIR = lib/win32
-             QMAKE_POST_LINK += "copy ./../HydroCoupleSDK/lib/win32/*HydroCoupleSDK* ./lib/win32/";
+             QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\lib\win32\HydroCoupleSDK* .\lib\win32"
           }
      } else {
          #MacOS
@@ -355,7 +360,7 @@ CONFIG(release, debug|release) {
          #Windows
          win32{
              DESTDIR = bin/win32
-             QMAKE_POST_LINK += "copy ./../HydroCoupleSDK/lib/win32/*HydroCoupleSDK* ./bin/win32/";
+             QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\lib\win32\HydroCoupleSDK* .\bin\win32"
           }
      }
 }

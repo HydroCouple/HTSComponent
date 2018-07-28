@@ -46,7 +46,7 @@ void HTSModel::update()
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-          for(size_t i = 0 ; i < m_solutes.size(); i++)
+          for(int i = 0 ; i < (int)m_solutes.size(); i++)
           {
             solveSoluteTransport(i, m_timeStep);
           }
@@ -285,7 +285,7 @@ void HTSModel::computeDTDt(double t, double y[], double dydt[], void* userData)
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-  for(size_t i = 0 ; i < modelInstance->m_elements.size(); i++)
+  for(int i = 0 ; i < (int)modelInstance->m_elements.size(); i++)
   {
     Element *element = modelInstance->m_elements[i];
     double DTDt = element->computeDTDt(dt,y);
@@ -302,7 +302,7 @@ void HTSModel::computeDSoluteDt(double t, double y[], double dydt[], void *userD
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-  for(size_t i = 0 ; i < modelInstance->m_elements.size(); i++)
+  for(int i = 0 ; i < (int)modelInstance->m_elements.size(); i++)
   {
     Element *element = modelInstance->m_elements[i];
     double DSoluteDt = element->computeDSoluteDt(dt,y,solverUserData->variableIndex);

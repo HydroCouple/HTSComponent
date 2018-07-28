@@ -38,3 +38,12 @@ Makefile*
 CMakeLists.txt.user*
 
 *.json
+*.pdb
+*.obj
+*.pch
+*.rc
+*.exp
+*.ilk
+*.lib
+*.json
+*.json

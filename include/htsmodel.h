@@ -749,10 +749,10 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
 #endif
 
     QTextStream m_outputCSVStream; //Output CSV filestream
-    static const std::unordered_map<std::string, int> m_inputFileFlags, //Input file flags
-    m_hydraulicVariableFlags, //Hydraulic variable flags
-    m_optionsFlags, //Input file flags
-    m_solverTypeFlags; //Solver type flags
+    static const std::unordered_map<std::string, int> m_inputFileFlags; //Input file flags
+    static const std::unordered_map<std::string, int> m_hydraulicVariableFlags; //Hydraulic variable flags
+    static const std::unordered_map<std::string, int> m_optionsFlags; //Input file flags
+    static const std::unordered_map<std::string, int> m_solverTypeFlags; //Solver type flags
 
     static const QRegExp m_dateTimeDelim;
 
