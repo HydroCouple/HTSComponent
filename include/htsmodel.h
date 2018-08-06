@@ -672,6 +672,12 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
      */
     bool findProfile(Element *from, Element *to, std::list<Element*> &profile);
 
+    /*!
+     * \brief calculateDistanceFromUpstreamJunction
+     * \param Element
+     */
+    void calculateDistanceFromUpstreamJunction(Element *element);
+
   private:
 
     std::vector<std::string> m_solutes; // Names of the solutes.

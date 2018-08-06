@@ -486,7 +486,13 @@ bool HTSModel::initializeElements(std::list<string> &errors)
   {
     Element *element = m_elements[i];
     element->index = i;
+    element->distanceFromUpStreamJunction = 0;
     element->initialize();
+  }
+
+  for(int i = 0 ; i < (int)m_elements.size()  ; i++)
+  {
+    calculateDistanceFromUpstreamJunction(m_elements[i]);
   }
 
   //Set tempearture continuity junctions
@@ -552,3 +558,24 @@ bool HTSModel::findProfile(Element *from, Element *to, std::list<Element *> &pro
   return false;
 }
 
+void HTSModel::calculateDistanceFromUpstreamJunction(Element *element)
+{
+  if(element->distanceFromUpStreamJunction == 0)
+  {
+    if(element->upstreamJunction->incomingElements.size() == 1)
+    {
+      Element *upstreamElement = *element->upstreamJunction->incomingElements.begin();
+
+      if( upstreamElement->distanceFromUpStreamJunction == 0)
+      {
+        calculateDistanceFromUpstreamJunction(upstreamElement);
+      }
+
+      element->distanceFromUpStreamJunction = upstreamElement->distanceFromUpStreamJunction + element->length / 2.0;
+    }
+    else
+    {
+      element->distanceFromUpStreamJunction = element->length / 2.0;
+    }
+  }
+}

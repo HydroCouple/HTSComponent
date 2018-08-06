@@ -206,6 +206,11 @@ struct Element
    double groundConductionDepth;
 
    /*!
+    * \brief distanceFromUpStreamJunction
+    */
+   double distanceFromUpStreamJunction;
+
+   /*!
     * \brief model
     */
    HTSModel *model;
