@@ -36,7 +36,8 @@ PRECOMPILED_HEADER = ./include/stdafx.h
 INCLUDEPATH += .\
                ./include \
                ./../HydroCouple/include \
-               ./../HydroCoupleSDK/include
+               ./../HydroCoupleSDK/include \
+               ./../ODESolver/include
 
 
 HEADERS += ./include/stdafx.h\
@@ -46,7 +47,6 @@ HEADERS += ./include/stdafx.h\
            ./include/htsmodel.h \
            ./include/iboundarycondition.h \
            ./include/elementjunction.h \
-           ./include/odesolver.h \
            ./include/test/htscomponenttest.h \
            ./include/variable.h \
            ./include/element.h \
@@ -66,7 +66,6 @@ SOURCES +=./src/stdafx.cpp \
           ./src/htscomponent.cpp \
           ./src/htscomponentinfo.cpp \ 
           ./src/main.cpp \
-          ./src/odesolver.cpp \
           ./src/element.cpp \
           ./src/htsmodel.cpp \
           ./src/elementjunction.cpp \
@@ -287,18 +286,31 @@ CONFIG(debug, debug|release) {
    UI_DIR = $$DESTDIR/.ui
 
    macx{
-    QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/build/debug/*HydroCoupleSDK.* ./build/debug/";
-    LIBS += -L./../HydroCoupleSDK/build/debug -lHydroCoupleSDK
+
+    QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/build/debug/*HydroCoupleSDK.* ./build/debug/ &&"
+    QMAKE_POST_LINK += "cp -a ./../ODESolver/build/debug/*ODESolver.* ./build/debug/";
+
+    LIBS += -L./../HydroCoupleSDK/build/debug -lHydroCoupleSDK \
+            -L./../ODESolver/build/debug -lODESolver
    }
 
    linux{
-    QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/build/debug/*HydroCoupleSDK.* ./build/debug/";
-    LIBS += -L./../HydroCoupleSDK/build/debug -lHydroCoupleSDK
+
+    QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/build/debug/*HydroCoupleSDK.* ./build/debug/ &&"
+    QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/build/debug/*ODESolver.* ./build/debug/";
+
+    LIBS += -L./../HydroCoupleSDK/build/debug -lHydroCoupleSDK \
+            -L./../ODESolver/build/debug -lODESolver
    }
 
    win32{
-    QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\build\debug\HydroCoupleSDK* .\build\debug"
-    LIBS += -L./../HydroCoupleSDK/build/debug -lHydroCoupleSDK1
+
+    QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\build\debug\HydroCoupleSDK* .\build\debug &&"
+    QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\build\debug\ODESolver* .\build\debug"
+
+    LIBS += -L./../HydroCoupleSDK/build/debug -lHydroCoupleSDK1 \
+            -L./../ODESolver/build/debug -lODESolver1
+
    }
 }
 
@@ -315,52 +327,61 @@ CONFIG(release, debug|release) {
     UI_DIR = $$RELEASE_EXTRAS/.ui
 
    macx{
-    LIBS += -L./../HydroCoupleSDK/lib/macx -lHydroCoupleSDK
+    LIBS += -L./../HydroCoupleSDK/lib/macx -lHydroCoupleSDK \
+            -L./../ODESolver/lib/macx -lODESolver
    }
 
    linux{
-    LIBS += -L./../HydroCoupleSDK/lib/linux -lHydroCoupleSDK
+    LIBS += -L./../HydroCoupleSDK/lib/linux -lHydroCoupleSDK \
+            -L./../ODESolver/lib/macx -lODESolver
    }
 
    win32{
-    LIBS += -L./../HydroCoupleSDK/lib/win32 -lHydroCoupleSDK1
+    LIBS += -L./../HydroCoupleSDK/lib/win32 -lHydroCoupleSDK1 \
+            -L./../ODESolver/lib/macx -lODESolver1
    }
 
      contains(DEFINES,HTSCOMPONENT_LIBRARY){
          #MacOS
          macx{
              DESTDIR = lib/macx
-             QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/lib/macx/*HydroCoupleSDK.* ./lib/macx/";
+             QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/lib/macx/*HydroCoupleSDK.* ./lib/macx/ &&";
+             QMAKE_POST_LINK += "cp -a ./../ODESolver/lib/macx/*ODESolver.* ./lib/macx/";
           }
 
          #Linux
          linux{
              DESTDIR = lib/linux
-             QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/lib/linux/*HydroCoupleSDK.* ./lib/linux/";
+             QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/lib/linux/*HydroCoupleSDK.* ./lib/linux/ &&";
+             QMAKE_POST_LINK += "cp -a ./../ODESolver/lib/linux/*ODESolver.* ./lib/linux/";
           }
 
          #Windows
          win32{
              DESTDIR = lib/win32
-             QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\lib\win32\HydroCoupleSDK* .\lib\win32"
+             QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\lib\win32\HydroCoupleSDK* .\lib\win32 &&"
+             QMAKE_POST_LINK += "copy /B .\..\ODESolver\lib\win32\ODESolver* .\lib\win32"
           }
      } else {
          #MacOS
          macx{
              DESTDIR = bin/macx
-             QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/lib/macx/*HydroCoupleSDK.* ./bin/macx/";
+             QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/lib/macx/*HydroCoupleSDK.* ./bin/macx/ &&"
+             QMAKE_POST_LINK += "cp -a ./../ODESolver/lib/macx/*ODESolver.* ./bin/macx/";
           }
 
          #Linux
          linux{
              DESTDIR = bin/linux
-             QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/lib/linux/*HydroCoupleSDK.* ./bin/linux/";
+             QMAKE_POST_LINK += "cp -a ./../HydroCoupleSDK/lib/linux/*HydroCoupleSDK.* ./bin/linux/ &&"
+             QMAKE_POST_LINK += "cp -a ./../ODESolver/lib/linux/*ODESolver.* ./bin/linux/";
           }
 
          #Windows
          win32{
              DESTDIR = bin/win32
-             QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\lib\win32\HydroCoupleSDK* .\bin\win32"
+             QMAKE_POST_LINK += "copy /B .\..\HydroCoupleSDK\lib\win32\HydroCoupleSDK* .\bin\win32 &&"
+             QMAKE_POST_LINK += "copy /B .\..\ODESolver\lib\win32\ODESolver* .\bin\win32"
           }
      }
 }
