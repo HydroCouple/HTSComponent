@@ -372,7 +372,7 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-    for (size_t i = 0; i < m_elementJunctions.size(); i++)
+    for (int i = 0; i < m_elementJunctions.size(); i++)
     {
       ElementJunction *junction = m_elementJunctions[i];
 
@@ -430,7 +430,7 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-    for (size_t i = 0; i < m_elements.size(); i++)
+    for (int i = 0; i < m_elements.size(); i++)
     {
       Element *element = m_elements[i];
 
