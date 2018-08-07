@@ -425,7 +425,7 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
     int *fromJunctions = new int[m_elements.size()];
     int *toJunctions = new int[m_elements.size()];
     char **elementIds = new char *[m_elements.size()];
-    double *els = new double[m_elements.size()];
+    //double *els = new double[m_elements.size()];
 
 #ifdef USE_OPENMP
 #pragma omp parallel for
@@ -439,17 +439,17 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
 
       fromJunctions[i] = element->upstreamJunction->index;
       toJunctions[i] = element->downstreamJunction->index;
-      els[i] = element->distanceFromUpStreamJunction;
+      //els[i] = element->distanceFromUpStreamJunction;
     }
 
     elementIdentifiers.putVar(elementIds);
     elementFromJunction.putVar(fromJunctions);
     elementToJunction.putVar(toJunctions);
-    elementsVar.putVar(els);
+    //elementsVar.putVar(els);
 
     delete[] fromJunctions;
     delete[] toJunctions;
-    delete[] els;
+    //delete[] els;
 
     for (size_t i = 0; i < m_elements.size(); i++)
     {
