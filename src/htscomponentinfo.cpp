@@ -53,6 +53,6 @@ IModelComponent *HTSComponentInfo::createComponentInstance()
 {
   QString id =  QUuid::createUuid().toString();
   HTSComponent *component = new HTSComponent(id, this);
-  component->setDescription("STM Model Instance");
+  component->setDescription("HTS Model Instance");
   return component;
 }
