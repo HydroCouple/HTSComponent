@@ -416,10 +416,10 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
     m_outNetCDFVariables["to_junction"] = elementToJunction;
 
 
-    ThreadSafeNcVar elementsVar =  m_outputNetCDF->addVar("elements", NcType::nc_DOUBLE, elementsDim);
-    elementsVar.putAtt("long_name", "Distance");
-    elementsVar.putAtt("units", "m");
-    m_outNetCDFVariables["elements"] = elementsVar;
+    //    ThreadSafeNcVar elementsVar =  m_outputNetCDF->addVar("elements", NcType::nc_DOUBLE, elementsDim);
+    //    elementsVar.putAtt("long_name", "Distance");
+    //    elementsVar.putAtt("units", "m");
+    //    m_outNetCDFVariables["elements"] = elementsVar;
 
 
     int *fromJunctions = new int[m_elements.size()];
@@ -477,11 +477,11 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
     xsectAreaVar.putAtt("units", "m^2");
     m_outNetCDFVariables["xsection_area"] = xsectAreaVar;
 
-    ThreadSafeNcVar temperatureVar =  m_outputNetCDF->addVar("temperature", "double",
+    ThreadSafeNcVar temperatureVar =  m_outputNetCDF->addVar("hts_temperature", "double",
                                                              std::vector<std::string>({"time", "elements"}));
-    temperatureVar.putAtt("long_name", "Temperature");
+    temperatureVar.putAtt("long_name", "HTS Temperature");
     temperatureVar.putAtt("units", "°C");
-    m_outNetCDFVariables["temperature"] = temperatureVar;
+    m_outNetCDFVariables["hts_temperature"] = temperatureVar;
 
 
     ThreadSafeNcVar channelConductionFluxVar =  m_outputNetCDF->addVar("channel_conduction_heat_flux", "double",
@@ -2371,7 +2371,7 @@ void HTSModel::writeNetCDFOutput()
 
     m_outNetCDFVariables["xsection_area"].putVar(std::vector<size_t>({currentTime, 0}), std::vector<size_t>({1, m_elements.size()}), xsectArea);
 
-    m_outNetCDFVariables["temperature"].putVar(std::vector<size_t>({currentTime, 0}), std::vector<size_t>({1, m_elements.size()}), temperature);
+    m_outNetCDFVariables["hts_temperature"].putVar(std::vector<size_t>({currentTime, 0}), std::vector<size_t>({1, m_elements.size()}), temperature);
 
     m_outNetCDFVariables["channel_conduction_heat_flux"].putVar(std::vector<size_t>({currentTime, 0}), std::vector<size_t>({1, m_elements.size()}), channelConductionFlux);
 
