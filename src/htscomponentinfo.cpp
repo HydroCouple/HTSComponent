@@ -31,7 +31,7 @@ HTSComponentInfo::HTSComponentInfo(QObject *parent)
 
   setId("Hyporheic Transient Storage Temperature Model 1.0.0");
   setCaption("HTS Component");
-  setIconFilePath("./../../resources/images/hydrocouplecomposer.png");
+  setIconFilePath(":/HTSComponent/htscomponenticon");
   setDescription("A one-dimensional channel heat and solute transport model.");
   setCategory("Hydrodyanmics\\Heat Transport");
   setCopyright("");

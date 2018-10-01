@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/HTSComponent">
+        <file alias="htscomponenticon">images/htscomponenticon.png</file>
+    </qresource>
+</RCC>

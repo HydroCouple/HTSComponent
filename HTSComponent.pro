@@ -385,3 +385,6 @@ CONFIG(release, debug|release) {
           }
      }
 }
+
+RESOURCES += \
+    resources/htscomponent.qrc

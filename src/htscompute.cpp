@@ -218,8 +218,12 @@ void HTSModel::solveHeatTransport(double timeStep)
 
   //Solve using ODE solver
   SolverUserData solverUserData; solverUserData.model = this; solverUserData.variableIndex = -1;
-  m_heatSolver->solve(currentTemperatures, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
-                  outputTemperatures, &HTSModel::computeDTDt, &solverUserData);
+
+  if(m_heatSolver->solve(currentTemperatures, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
+                  outputTemperatures, &HTSModel::computeDTDt, &solverUserData))
+  {
+    printf("HTS Temperature Solver failed \n");
+  }
 
   //Apply computed values;
   //#ifdef USE_OPENMP
@@ -255,8 +259,12 @@ void HTSModel::solveSoluteTransport(int soluteIndex, double timeStep)
 
   //Solve using ODE solver
   SolverUserData solverUserData; solverUserData.model = this; solverUserData.variableIndex = soluteIndex;
-  m_soluteSolvers[soluteIndex]->solve(outputSoluteConcs, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
-                  outputSoluteConcs, &HTSModel::computeDSoluteDt, &solverUserData);
+
+  if(m_soluteSolvers[soluteIndex]->solve(outputSoluteConcs, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
+                  outputSoluteConcs, &HTSModel::computeDSoluteDt, &solverUserData))
+  {
+    printf("HTS Solute Solver failed \n");
+  }
 
   //Apply computed values;
   //#ifdef USE_OPENMP
