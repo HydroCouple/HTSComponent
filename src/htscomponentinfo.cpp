@@ -32,7 +32,7 @@ HTSComponentInfo::HTSComponentInfo(QObject *parent)
   setId("Hyporheic Transient Storage Temperature Model 1.0.0");
   setCaption("HTS Component");
   setIconFilePath(":/HTSComponent/htscomponenticon");
-  setDescription("A one-dimensional channel heat and solute transport model.");
+  setDescription("A channel hyporheic transient zone storage heat and solute exchange model.");
   setCategory("Hydrodyanmics\\Heat Transport");
   setCopyright("");
   setVendor("");
