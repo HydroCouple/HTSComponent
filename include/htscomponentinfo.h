@@ -27,7 +27,7 @@
 class HTSCOMPONENT_EXPORT HTSComponentInfo : public AbstractModelComponentInfo
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "STMComponentInfo")
+    Q_PLUGIN_METADATA(IID "HTSComponentInfo")
 
   public:
 

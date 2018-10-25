@@ -23,7 +23,6 @@
 #include "htscomponent_global.h"
 #include "spatial/network.h"
 #include "odesolver.h"
-#include "threadsafenetcdf/threadsafencvar.h"
 
 #include <vector>
 #include <string>
@@ -33,6 +32,7 @@
 
 
 #ifdef USE_NETCDF
+#include "threadsafenetcdf/threadsafencvar.h"
 #include <netcdf>
 #endif
 
@@ -197,6 +197,8 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
      * \param value
      */
     void setWaterDensity(double value);
+
+    
 
     /*!
      * \brief specificHeatCapacityWater
