@@ -201,55 +201,47 @@ double HTSModel::computeTimeStep()
 
 void HTSModel::solveHeatTransport(double timeStep)
 {
-  //Allocate memory to store inputs and outputs
-  double *currentTemperatures = new double[m_elements.size()];
-  double *outputTemperatures = new double[m_elements.size()];
-
   //Set initial input and output values to current values.
-  //#ifdef USE_OPENMP
-  //#pragma omp parallel for
-  //#endif
+#ifdef USE_OPENMP
+#pragma omp parallel for
+#endif
   for(size_t i = 0 ; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
-    currentTemperatures[element->index] = element->temperature.value;
-    outputTemperatures[element->index] = element->temperature.value;
+    m_currTemps[element->index] = element->temperature.value;
+    m_outTemps[element->index] = element->temperature.value;
   }
 
   //Solve using ODE solver
   SolverUserData solverUserData; solverUserData.model = this; solverUserData.variableIndex = -1;
 
-  if(m_heatSolver->solve(currentTemperatures, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
-                  outputTemperatures, &HTSModel::computeDTDt, &solverUserData))
+  if(m_heatSolver->solve(m_currTemps.data(), m_elements.size() , m_currentDateTime * 86400.0, timeStep,
+                  m_outTemps.data(), &HTSModel::computeDTDt, &solverUserData))
   {
     printf("HTS Temperature Solver failed \n");
   }
 
   //Apply computed values;
-  //#ifdef USE_OPENMP
-  //#pragma omp parallel for
-  //#endif
+#ifdef USE_OPENMP
+#pragma omp parallel for
+#endif
   for(size_t i = 0 ; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
-    double outputTemperature = outputTemperatures[element->index];
+    double outputTemperature = m_outTemps[element->index];
     element->temperature.value = outputTemperature;
   }
-
-  //Delete allocated memory
-  delete[] currentTemperatures;
-  delete[] outputTemperatures;
 }
 
 void HTSModel::solveSoluteTransport(int soluteIndex, double timeStep)
 {
-  double *currentSoluteConcs = new double[m_elements.size()];
-  double *outputSoluteConcs = new double[m_elements.size()];
+  std::vector<double> &currentSoluteConcs = m_currSoluteConcs[soluteIndex];
+  std::vector<double> &outputSoluteConcs = m_outSoluteConcs[soluteIndex];
 
   //Set initial values.
-  //#ifdef USE_OPENMP
-  //#pragma omp parallel for
-  //#endif
+#ifdef USE_OPENMP
+#pragma omp parallel for
+#endif
   for(size_t i = 0 ; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
@@ -260,26 +252,21 @@ void HTSModel::solveSoluteTransport(int soluteIndex, double timeStep)
   //Solve using ODE solver
   SolverUserData solverUserData; solverUserData.model = this; solverUserData.variableIndex = soluteIndex;
 
-  if(m_soluteSolvers[soluteIndex]->solve(outputSoluteConcs, m_elements.size() , m_currentDateTime * 86400.0, timeStep,
-                  outputSoluteConcs, &HTSModel::computeDSoluteDt, &solverUserData))
+  if(m_soluteSolvers[soluteIndex]->solve(outputSoluteConcs.data(), m_elements.size() , m_currentDateTime * 86400.0, timeStep,
+                  outputSoluteConcs.data(), &HTSModel::computeDSoluteDt, &solverUserData))
   {
     printf("HTS Solute Solver failed \n");
   }
 
   //Apply computed values;
-  //#ifdef USE_OPENMP
-  //#pragma omp parallel for
-  //#endif
+#ifdef USE_OPENMP
+#pragma omp parallel for
+#endif
   for(size_t i = 0 ; i < m_elements.size(); i++)
   {
     Element *element = m_elements[i];
     element->soluteConcs[soluteIndex].value = outputSoluteConcs[element->index];
   }
-
-
-  //Delete allocated memory
-  delete[] currentSoluteConcs;
-  delete[] outputSoluteConcs;
 
 }
 

@@ -701,7 +701,12 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
     std::vector<double> m_maxSolute, //array for tracking maximum solute concentrations
     m_minSolute, //array for tracking minimum solute concentrations
     m_totalSoluteMassBalance, // Tracks total mass balance of solutes (kg)
-    m_totalExternalSoluteFluxMassBalance; //Tracks total mass balance from external sources (kg)
+    m_totalExternalSoluteFluxMassBalance, //Tracks total mass balance from external sources (kg)
+    m_currTemps,
+    m_outTemps;
+
+    std::vector<std::vector<double>> m_currSoluteConcs,
+                                     m_outSoluteConcs;
 
     int m_numInitFixedTimeSteps, //Number of initial fixed timeSteps of the minimum timestep to use when using the adaptive time step;
     m_numCurrentInitFixedTimeSteps, //Count number of initial minimum timesteps that have been used

@@ -33,7 +33,7 @@ HTSComponentInfo::HTSComponentInfo(QObject *parent)
   setCaption("HTS Component");
   setIconFilePath(":/HTSComponent/htscomponenticon");
   setDescription("A channel hyporheic transient zone storage heat and solute exchange model.");
-  setCategory("Hydrodyanmics\\Heat Transport");
+  setCategory("Hydrodyanmics\\Heat & Solute Transport");
   setCopyright("");
   setVendor("");
   setUrl("www.hydrocouple.org");

@@ -236,7 +236,6 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractTimeModelComponent,
     std::vector<QSharedPointer<HCGeometry>> m_elementJunctionGeometries;
     HTSModel *m_modelInstance;
     HTSComponentInfo *m_HTSComponentInfo;
-
     HTSComponent *m_parent;
     QList<HydroCouple::ICloneableModelComponent*> m_clones;
 };

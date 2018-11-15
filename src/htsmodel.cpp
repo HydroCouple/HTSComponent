@@ -210,16 +210,16 @@ int HTSModel::numSolutes() const
 
 void HTSModel::setNumSolutes(int numSolutes)
 {
+  
+  for(size_t i = 0; i < m_soluteSolvers.size(); i++)
+  {
+    delete m_soluteSolvers[i];
+  }
+
+  m_soluteSolvers.clear();
+
   if(numSolutes >= 0)
   {
-
-    for(size_t i = 0; i < m_soluteSolvers.size(); i++)
-    {
-      delete m_soluteSolvers[i];
-    }
-
-    m_soluteSolvers.clear();
-
     m_solutes.resize(numSolutes);
     m_maxSolute.resize(numSolutes);
     m_minSolute.resize(numSolutes);
@@ -506,6 +506,12 @@ bool HTSModel::initializeElements(std::list<string> &errors)
     ElementJunction *elementJunction = m_elementJunctions[i];
     elementJunction->index = i;
   }
+
+  m_currTemps.resize(m_elements.size(), 0.0);
+  m_outTemps.resize(m_elements.size(), 0.0);
+
+  m_currSoluteConcs.resize(m_solutes.size(), std::vector<double>(m_elements.size(), 0.0));
+  m_outSoluteConcs.resize(m_solutes.size(), std::vector<double>(m_elements.size(), 0.0));
 
   return true;
 }
