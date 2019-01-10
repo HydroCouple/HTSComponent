@@ -17,18 +17,33 @@
 *  \warning
 */
 
-#ifndef RADIATIVEFLUXTIMESERIESBC_H
-#define RADIATIVEFLUXTIMESERIESBC_H
+#ifndef RADIATIVEFLUXBC_H
+#define RADIATIVEFLUXBC_H
 
-#include "abstracttimeseriesbc.h"
+#include "iboundarycondition.h"
+#include "htscomponent_global.h"
 
-class HTSCOMPONENT_EXPORT RadiativeFluxTimeSeriesBC : public AbstractTimeSeriesBC
+#include <QObject>
+#include <QSharedPointer>
+#include <unordered_map>
+
+struct Element;
+class TimeSeries;
+class HTSModel;
+class DataCursor;
+
+class HTSCOMPONENT_EXPORT RadiativeFluxBC: public QObject,
+    public virtual IBoundaryCondition
 {
+    Q_OBJECT
+
   public:
 
-    RadiativeFluxTimeSeriesBC(Element *element, HTSModel *model);
+    RadiativeFluxBC(Element *startElement,
+                    Element *endElement,
+                    HTSModel *model);
 
-    virtual ~RadiativeFluxTimeSeriesBC();
+    virtual ~RadiativeFluxBC();
 
     void  findAssociatedGeometries() override final;
 
@@ -36,30 +51,7 @@ class HTSCOMPONENT_EXPORT RadiativeFluxTimeSeriesBC : public AbstractTimeSeriesB
 
     void applyBoundaryConditions(double dateTime) override final;
 
-    Element *element() const;
-
-    void setElement(Element *element);
-
-  private:
-
-    Element *m_element;
-
-};
-
-
-class HTSCOMPONENT_EXPORT UniformRadiativeFluxTimeSeriesBC : public AbstractTimeSeriesBC
-{
-  public:
-
-    UniformRadiativeFluxTimeSeriesBC(Element *startElement, Element *endElement, HTSModel *model);
-
-    virtual ~UniformRadiativeFluxTimeSeriesBC();
-
-    void  findAssociatedGeometries() override final;
-
-    void prepare() override final;
-
-    void applyBoundaryConditions(double dateTime) override final;
+    void clear() override final;
 
     Element *startElement() const;
 
@@ -69,13 +61,19 @@ class HTSCOMPONENT_EXPORT UniformRadiativeFluxTimeSeriesBC : public AbstractTime
 
     void setEndElement(Element *element);
 
+    QSharedPointer<TimeSeries> timeSeries() const;
+
+    void setTimeSeries(const QSharedPointer<TimeSeries> &timeseries);
+
   private:
 
-    std::list<Element*> m_profile;
+    std::vector<Element*> m_profile;
     Element *m_startElement, *m_endElement;
-
+    DataCursor *m_dataCursor;
+    QSharedPointer<TimeSeries> m_timeSeries;
+    HTSModel *m_model;
 };
 
 
 
-#endif // RADIATIVEFLUXTIMESERIESBC_H
+#endif // RADIATIVEFLUXBC_H

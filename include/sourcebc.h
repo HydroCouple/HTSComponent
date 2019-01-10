@@ -20,23 +20,50 @@
 #ifndef NONPOINTSRCTIMESERIESBC_H
 #define NONPOINTSRCTIMESERIESBC_H
 
-#include "abstracttimeseriesbc.h"
+#include "iboundarycondition.h"
+#include "htscomponent_global.h"
 
-class HTSCOMPONENT_EXPORT NonPointSrcTimeSeriesBC : public AbstractTimeSeriesBC
+#include <QObject>
+#include <QSharedPointer>
+#include <unordered_map>
+
+struct Element;
+class TimeSeries;
+class HTSModel;
+class DataCursor;
+
+class HTSCOMPONENT_EXPORT SourceBC: public QObject,
+    public virtual IBoundaryCondition
 {
+    Q_OBJECT
+
   public:
 
-    NonPointSrcTimeSeriesBC(Element *startElement, double startElementLFactor,
-                            Element *endElement, double endElementLFactor,
-                            int variableIndex, HTSModel *model);
+    enum VariableType
+    {
+      HeatSource,
+      FlowSource,
+      SoluteSource,
+    };
 
-    virtual ~NonPointSrcTimeSeriesBC();
+  public:
+
+    SourceBC(Element *startElement,
+             double startElementLFactor,
+             Element *endElement,
+             double endElementLFactor,
+             VariableType variableType,
+             HTSModel *model);
+
+    virtual ~SourceBC();
 
     void  findAssociatedGeometries() override final;
 
     void prepare() override final;
 
     void applyBoundaryConditions(double dateTime) override final;
+
+    void clear() override final;
 
     Element *startElement() const;
 
@@ -54,11 +81,24 @@ class HTSCOMPONENT_EXPORT NonPointSrcTimeSeriesBC : public AbstractTimeSeriesBC
 
     void setEndElementLFactor(double factor);
 
+    int soluteIndex() const;
+
+    void setSoluteIndex(int soluteIndex);
+
+    QSharedPointer<TimeSeries> timeSeries() const;
+
+    void setTimeSeries(const QSharedPointer<TimeSeries> &timeseries);
+
   private:
-    std::list<Element*> m_profile;
+    std::vector<Element*> m_profile;
     Element *m_startElement, *m_endElement;
     double m_startElementLFactor, m_endElementLFactor;
-    int m_variableIndex;
+    std::unordered_map<Element*, double> m_factors;
+    VariableType m_variableType;
+    int m_soluteIndex;
+    DataCursor *m_dataCursor;
+    QSharedPointer<TimeSeries> m_timeSeries;
+    HTSModel *m_model;
 };
 
 

@@ -98,7 +98,7 @@ struct Element
    /*!
     * \brief groundSoluteConcs [kg/m^3]
     */
-   double *groundSoluteConcs;
+//   double *groundSoluteConcs;
 
    /*!
     * \brief temperatureExchangeCoefficient (m^2/s)
@@ -158,7 +158,7 @@ struct Element
    /*!
     * \brief advectionHeat (J/s)
     */
-   double advectionHeat;
+   double mainChannelAdvectionHeat;
 
    /*!
     * \brief externalHeatFluxes of (J/s)
@@ -199,6 +199,16 @@ struct Element
     * \brief totalExternalSoluteFluxesMassBalance  (kg)
     */
    double *totalExternalSoluteFluxesMassBalance;
+
+   /*!
+    * \brief mainChannelSoluteDiffusionFlux (kg/s)
+    */
+   double *mainChannelSoluteDiffusionFlux;
+
+   /*!
+    * \brief mainChannelSoluteAdvectionFlux
+    */
+   double *mainChannelSoluteAdvectionFlux;
 
    /*!
     * \brief groundConductionDepth (m)

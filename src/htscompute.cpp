@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "htsmodel.h"
 #include "element.h"
 #include "elementjunction.h"

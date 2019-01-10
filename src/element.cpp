@@ -15,7 +15,6 @@ Element::Element(const std::string &id, ElementJunction *upstream, ElementJuncti
     soluteConcs(nullptr),
     prevSoluteConcs(nullptr),
     mainChannelSoluteConcs(nullptr),
-    groundSoluteConcs(nullptr),
     sedSoluteDiffCoefficients(nullptr),
     upstreamJunction(upstream),
     downstreamJunction(downstream),
@@ -25,7 +24,7 @@ Element::Element(const std::string &id, ElementJunction *upstream, ElementJuncti
     width(0.001),
     mainChannelConductionHeat(0.0),
     groundConductionHeat(0.0),
-    advectionHeat(0.0),
+    mainChannelAdvectionHeat(0.0),
     externalHeatFluxes(0.0),
     radiationFluxes(0.0),
     externalSoluteFluxes(nullptr),
@@ -34,6 +33,8 @@ Element::Element(const std::string &id, ElementJunction *upstream, ElementJuncti
     totalExternalHeatFluxesBalance(0.0),
     totalSoluteMassBalance(nullptr),
     totalExternalSoluteFluxesMassBalance(nullptr),
+    mainChannelSoluteDiffusionFlux(nullptr),
+    mainChannelSoluteAdvectionFlux(nullptr),
     groundConductionDepth(0.01),
     model(model)
 {
@@ -57,10 +58,11 @@ Element::~Element()
     delete[] prevSoluteConcs;
     delete[] externalSoluteFluxes;
     delete[] mainChannelSoluteConcs; mainChannelSoluteConcs = nullptr;
-    delete[] groundSoluteConcs; groundSoluteConcs = nullptr;
     delete[] sedSoluteDiffCoefficients;  sedSoluteDiffCoefficients = nullptr;
     delete[] totalSoluteMassBalance; totalSoluteMassBalance = nullptr;
     delete[] totalExternalSoluteFluxesMassBalance; totalExternalSoluteFluxesMassBalance = nullptr;
+    delete[] mainChannelSoluteDiffusionFlux; mainChannelSoluteDiffusionFlux = nullptr;
+    delete[] mainChannelSoluteAdvectionFlux; mainChannelSoluteAdvectionFlux = nullptr;
   }
 
   upstreamJunction->outgoingElements.erase(this);
@@ -73,7 +75,7 @@ void Element::initialize()
   //set upstream and downstream elements
   mainChannelConductionHeat = 0.0;
   groundConductionHeat = 0.0;
-  advectionHeat = 0.0;
+  mainChannelAdvectionHeat = 0.0;
 
   totalHeatBalance =  totalRadiationFluxesHeatBalance = 0.0;
 
@@ -81,6 +83,8 @@ void Element::initialize()
   {
     totalSoluteMassBalance[i] = 0.0;
     totalExternalSoluteFluxesMassBalance[i] = 0.0;
+    mainChannelSoluteDiffusionFlux[i] = 0.0;
+    mainChannelSoluteAdvectionFlux[i] = 0.0;
   }
 }
 
@@ -92,10 +96,11 @@ void Element::initializeSolutes()
     delete[] prevSoluteConcs; prevSoluteConcs = nullptr;
     delete[] externalSoluteFluxes; externalSoluteFluxes = nullptr;
     delete[] mainChannelSoluteConcs; mainChannelSoluteConcs = nullptr;
-    delete[] groundSoluteConcs; groundSoluteConcs = nullptr;
     delete[] sedSoluteDiffCoefficients;  sedSoluteDiffCoefficients = nullptr;
     delete[] totalSoluteMassBalance; totalSoluteMassBalance = nullptr;
     delete[] totalExternalSoluteFluxesMassBalance; totalExternalSoluteFluxesMassBalance = nullptr;
+    delete[] mainChannelSoluteDiffusionFlux; mainChannelSoluteDiffusionFlux = nullptr;
+    delete[] mainChannelSoluteAdvectionFlux; mainChannelSoluteAdvectionFlux = nullptr;
   }
 
   if(model->m_solutes.size() > 0)
@@ -105,10 +110,11 @@ void Element::initializeSolutes()
     prevSoluteConcs = new Variable[numSolutes];
     externalSoluteFluxes = new double[numSolutes];
     mainChannelSoluteConcs = new double[numSolutes]();
-    groundSoluteConcs = new double[numSolutes];
     sedSoluteDiffCoefficients = new double[numSolutes]();
     totalSoluteMassBalance = new double[numSolutes]();
     totalExternalSoluteFluxesMassBalance = new double[numSolutes]();
+    mainChannelSoluteDiffusionFlux = new double[numSolutes]();
+    mainChannelSoluteAdvectionFlux = new double[numSolutes]();
   }
 }
 
@@ -123,17 +129,18 @@ double Element::computeDTDt(double dt, double T[])
   if(volume)
   {
     //conduction main channel
-    mainChannelConductionHeat = sedThermalDiffCoefficient * width * length * (mainChannelTemperature - currentTemp) *
-                                model->m_sedDensity * model->m_sedCp / depth;
+    mainChannelConductionHeat = sedThermalDiffCoefficient * width * length * (mainChannelTemperature - currentTemp) * model->m_sedDensity * model->m_sedCp / depth;
 
     //conduction ground
     groundConductionHeat = sedThermalDiffCoefficient * width * length * (groundTemperature - currentTemp) * model->m_sedDensity * model->m_sedCp / groundConductionDepth;
 
     //advection
-    advectionHeat = model->m_waterDensity * model->m_cp * mainChannelAdvectionCoeff * (mainChannelTemperature - currentTemp);
+    mainChannelAdvectionHeat = model->m_waterDensity * model->m_cp * mainChannelAdvectionCoeff * (mainChannelTemperature - currentTemp);
 
     //Sum all heat
-    DTDt = (mainChannelConductionHeat + groundConductionHeat + advectionHeat + externalHeatFluxes + (radiationFluxes * length * width)) / rho_cp_vol;
+    DTDt = (mainChannelConductionHeat + groundConductionHeat + mainChannelAdvectionHeat + externalHeatFluxes + (radiationFluxes * length * width)) / rho_cp_vol;
+
+
   }
 
   return DTDt;
@@ -144,19 +151,25 @@ double Element::computeDSoluteDt(double dt, double S[], int soluteIndex)
   double DSoluteDt = 0;
   xSectionArea = width * depth;
   double volume = xSectionArea * length;
-  double rho_vol = model->m_sedDensity * volume;
 
   //conduction main channel
-  DSoluteDt += sedSoluteDiffCoefficients[soluteIndex] * width * length * (mainChannelSoluteConcs[soluteIndex] - S[index]) / (depth * volume);
+  double soluteDiff = sedSoluteDiffCoefficients[soluteIndex] * width * length * (mainChannelSoluteConcs[soluteIndex] - S[index]) / (depth * volume);
+  mainChannelSoluteDiffusionFlux[soluteIndex] = soluteDiff;
+  DSoluteDt += soluteDiff;
 
   //conduction ground
-  DSoluteDt += sedSoluteDiffCoefficients[soluteIndex] * width * length * (groundSoluteConcs[soluteIndex] - S[index]) / (groundConductionDepth * volume);
+  //DSoluteDt += sedSoluteDiffCoefficients[soluteIndex] * width * length * (groundSoluteConcs[soluteIndex] - S[index]) / (groundConductionDepth * volume);
 
   //advection
-  DSoluteDt += model->m_waterDensity * mainChannelAdvectionCoeff * (mainChannelSoluteConcs[soluteIndex] - S[index]) / rho_vol;
+  double soluteAdv =  mainChannelAdvectionCoeff * (mainChannelSoluteConcs[soluteIndex] - S[index]) / volume;
+  mainChannelSoluteAdvectionFlux[soluteIndex] = soluteAdv;
+  DSoluteDt += soluteAdv;
+
+  //reaction 1st order reaction
+  DSoluteDt += model->m_solute_first_order_k[soluteIndex] * soluteConcs[soluteIndex].value;
 
   //External heat sources
-  DSoluteDt += externalSoluteFluxes[soluteIndex] / rho_vol;
+  DSoluteDt += externalSoluteFluxes[soluteIndex] / volume;
 
   return DSoluteDt;
 }

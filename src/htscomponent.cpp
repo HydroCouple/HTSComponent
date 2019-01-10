@@ -86,6 +86,19 @@ HTSComponent::HTSComponent(const QString &id, HTSComponentInfo *modelComponentIn
   m_diffCoeffUnit->dimensionsInternal()->setPower(HydroCouple::Length, 2);
   m_diffCoeffUnit->dimensionsInternal()->setPower(HydroCouple::Time, -1);
 
+  m_soluteFluxUnit = new Unit(this);
+  m_soluteFluxUnit->setCaption("Mass Flux (kg/s)");
+  m_soluteFluxUnit->dimensionsInternal()->setPower(HydroCouple::Mass, 1.0);
+  m_soluteFluxUnit->dimensionsInternal()->setPower(HydroCouple::Time, -1.0);
+
+  m_soluteUnit = new Unit(this);
+  m_soluteUnit->setCaption("Concentration (kg/m^3)");
+  m_soluteUnit->dimensionsInternal()->setPower(HydroCouple::Mass, 1.0);
+  m_soluteUnit->dimensionsInternal()->setPower(HydroCouple::Length, -3.0);
+
+  m_soluteConcQuantity = new Quantity(QVariant::Double, m_soluteUnit, this);
+  m_soluteConcFluxQuantity = new Quantity(QVariant::Double, m_soluteFluxUnit, this);
+
   createArguments();
 }
 
@@ -439,6 +452,11 @@ void HTSComponent::createInputs()
   createGroundDepthInput();
   createExternalRadiationFluxInput();
   createExternalHeatFluxInput();
+
+  for(int i = 0 ; i <  m_modelInstance->numSolutes(); i++)
+  {
+    createMainChannelSoluteConcInput(i);
+  }
 }
 
 void HTSComponent::createMainChannelTemperatureInput()
@@ -721,10 +739,48 @@ void HTSComponent::createExternalHeatFluxInput()
   addInput(m_externalHeatFluxInput);
 }
 
+void HTSComponent::createMainChannelSoluteConcInput(int soluteIndex)
+{
+  QString soluteName = QString::fromStdString(m_modelInstance->solute(soluteIndex));
+
+  ElementInput *soluteConcInput  = new ElementInput(soluteName + "Input",
+                                                    m_timeDimension,
+                                                    m_geometryDimension,
+                                                    m_soluteConcQuantity,
+                                                    ElementInput::MainChannelSoluteConc,
+                                                    this);
+
+  soluteConcInput->setCaption("Element " + soluteName + " Concentration (kg/m^3)");
+  soluteConcInput->setSoluteIndex(soluteIndex);
+
+  QList<QSharedPointer<HCGeometry>> geometries;
+
+  for(const QSharedPointer<HCGeometry> &lineString : m_elementGeometries)
+  {
+    geometries.append(lineString);
+  }
+
+  soluteConcInput->addGeometries(geometries);
+
+  SDKTemporal::DateTime *dt1 = new SDKTemporal::DateTime(m_modelInstance->currentDateTime() - 1.0/1000000.0, soluteConcInput);
+  SDKTemporal::DateTime *dt2 = new SDKTemporal::DateTime(m_modelInstance->currentDateTime(), soluteConcInput);
+
+  soluteConcInput->addTime(dt1);
+  soluteConcInput->addTime(dt2);
+
+  addInput(soluteConcInput);
+}
+
 void HTSComponent::createOutputs()
 {
   createMainChannelConductionHeatOutput();
   createMainChannelAdvectionHeatOutput();
+
+  for(int i = 0 ; i <  m_modelInstance->numSolutes(); i++)
+  {
+    createMainChannelSoluteDiffFluxOutput(i);
+    createMainChannelSoluteAdvFluxOutput(i);
+  }
 }
 
 void HTSComponent::createMainChannelConductionHeatOutput()
@@ -766,8 +822,8 @@ void HTSComponent::createMainChannelAdvectionHeatOutput()
   m_mainChannelAdvectionHeat = new ElementOutput("MainChannelAdvectionHeatFluxOutput",
                                                  m_timeDimension,
                                                  m_geometryDimension,
-                                                 heatFluxQuantity,
-                                                 ElementOutput::AdvectionHeat,
+                                                 m_soluteConcFluxQuantity,
+                                                 ElementOutput::ChannelAdvectionHeat,
                                                  this);
 
   m_mainChannelAdvectionHeat->setCaption("Main Channel Advection Heat Flux (J/s)");
@@ -789,4 +845,67 @@ void HTSComponent::createMainChannelAdvectionHeatOutput()
   m_mainChannelAdvectionHeat->addTime(dt2);
 
   addOutput(m_mainChannelAdvectionHeat);
+}
+
+void HTSComponent::createMainChannelSoluteDiffFluxOutput(int soluteIndex)
+{
+  QString soluteName = QString::fromStdString(m_modelInstance->solute(soluteIndex));
+
+  ElementOutput *soluteFluxOutput  = new ElementOutput(soluteName + "DiffOutput",
+                                                            m_timeDimension,
+                                                            m_geometryDimension,
+                                                            m_soluteConcFluxQuantity,
+                                                            ElementOutput::ChannelSoluteDiffusionFlux,
+                                                            this);
+  soluteFluxOutput->setCaption("Element " + soluteName + " Diffusive Flux (kg/s)");
+  soluteFluxOutput->setSoluteIndex(soluteIndex);
+
+  QList<QSharedPointer<HCGeometry>> geometries;
+
+  for(const QSharedPointer<HCGeometry> &lineString : m_elementGeometries)
+  {
+    geometries.append(lineString);
+  }
+
+  soluteFluxOutput->addGeometries(geometries);
+
+  SDKTemporal::DateTime *dt1 = new SDKTemporal::DateTime(m_modelInstance->currentDateTime() - 1.0/1000000.0, soluteFluxOutput);
+  SDKTemporal::DateTime *dt2 = new SDKTemporal::DateTime(m_modelInstance->currentDateTime(), soluteFluxOutput);
+
+  soluteFluxOutput->addTime(dt1);
+  soluteFluxOutput->addTime(dt2);
+
+  addOutput(soluteFluxOutput);
+}
+
+void HTSComponent::createMainChannelSoluteAdvFluxOutput(int soluteIndex)
+{
+  QString soluteName = QString::fromStdString(m_modelInstance->solute(soluteIndex));
+
+  ElementOutput *soluteFluxOutput  = new ElementOutput(soluteName + "AdvOutput",
+                                                            m_timeDimension,
+                                                            m_geometryDimension,
+                                                            m_soluteConcFluxQuantity,
+                                                            ElementOutput::ChannelSoluteAdvectionFlux,
+                                                            this);
+
+  soluteFluxOutput->setCaption("Element " + soluteName + " Advective Flux (kg/s)");
+  soluteFluxOutput->setSoluteIndex(soluteIndex);
+
+  QList<QSharedPointer<HCGeometry>> geometries;
+
+  for(const QSharedPointer<HCGeometry> &lineString : m_elementGeometries)
+  {
+    geometries.append(lineString);
+  }
+
+  soluteFluxOutput->addGeometries(geometries);
+
+  SDKTemporal::DateTime *dt1 = new SDKTemporal::DateTime(m_modelInstance->currentDateTime() - 1.0/1000000.0, soluteFluxOutput);
+  SDKTemporal::DateTime *dt2 = new SDKTemporal::DateTime(m_modelInstance->currentDateTime(), soluteFluxOutput);
+
+  soluteFluxOutput->addTime(dt1);
+  soluteFluxOutput->addTime(dt2);
+
+  addOutput(soluteFluxOutput);
 }

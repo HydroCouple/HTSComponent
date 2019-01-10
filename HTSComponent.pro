@@ -50,14 +50,10 @@ HEADERS += ./include/stdafx.h\
            ./include/test/htscomponenttest.h \
            ./include/variable.h \
            ./include/element.h \
-           ./include/iboundarycondition.h \
-           ./include/abstracttimeseriesbc.h \
-           ./include/iboundarycondition.h \
-           ./include/pointsrctimeseriesbc.h \
-           ./include/nonpointsrctimeseriesbc.h \
-           ./include/hydraulicstimeseriesbc.h \
-           ./include/radiativefluxtimeseriesbc.h \
-           ./include/boundarycondition.h \
+           ./include/sourcebc.h \
+           ./include/hydraulicsbc.h \
+           ./include/radiativefluxbc.h \
+           ./include/elementbc.h \
            ./include/elementinput.h \
            ./include/elementoutput.h
 
@@ -72,12 +68,10 @@ SOURCES +=./src/stdafx.cpp \
           ./src/test/htscomponenttest.cpp \
           ./src/htsmodelio.cpp \
           ./src/htscompute.cpp \
-          ./src/abstracttimeseriesbc.cpp \
-          ./src/pointsrctimeseriesbc.cpp \
-          ./src/nonpointsrctimeseriesbc.cpp \
-          ./src/hydraulicstimeseriesbc.cpp \
-          ./src/radiativefluxtimeseriesbc.cpp \
-          ./src/boundarycondition.cpp \
+          ./src/sourcebc.cpp \
+          ./src/hydraulicsbc.cpp \
+          ./src/radiativefluxbc.cpp \
+          ./src/elementbc.cpp \
           ./src/elementinput.cpp \
           ./src/elementoutput.cpp
 
@@ -272,7 +266,7 @@ CONFIG(debug, debug|release) {
     }
 
     macx {
-       QMAKE_CXXFLAGS += -O3
+       QMAKE_CXXFLAGS += -O1
     }
 
     linux {

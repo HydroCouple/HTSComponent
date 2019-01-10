@@ -1,9 +1,10 @@
 
+#include "stdafx.h"
 #include "element.h"
 #include "htsmodel.h"
-#include "hydraulicstimeseriesbc.h"
+#include "hydraulicsbc.h"
 
-HydraulicsTimeSeriesBC::HydraulicsTimeSeriesBC(Element *element, int variableIndex, HTSModel *model)
+HydraulicsBC::HydraulicsBC(Element *element, int variableIndex, HTSModel *model)
   :AbstractTimeSeriesBC(model),
    m_element(element),
    m_variableIndex(variableIndex)
@@ -11,22 +12,22 @@ HydraulicsTimeSeriesBC::HydraulicsTimeSeriesBC(Element *element, int variableInd
 
 }
 
-HydraulicsTimeSeriesBC::~HydraulicsTimeSeriesBC()
+HydraulicsBC::~HydraulicsBC()
 {
 
 }
 
-void HydraulicsTimeSeriesBC::findAssociatedGeometries()
+void HydraulicsBC::findAssociatedGeometries()
 {
 
 }
 
-void HydraulicsTimeSeriesBC::prepare()
+void HydraulicsBC::prepare()
 {
 
 }
 
-void HydraulicsTimeSeriesBC::applyBoundaryConditions(double dateTime)
+void HydraulicsBC::applyBoundaryConditions(double dateTime)
 {
   bool found ;
   double value = interpolate(dateTime, found);
@@ -51,18 +52,18 @@ void HydraulicsTimeSeriesBC::applyBoundaryConditions(double dateTime)
   }
 }
 
-Element *HydraulicsTimeSeriesBC::element() const
+Element *HydraulicsBC::element() const
 {
   return m_element;
 }
 
-void HydraulicsTimeSeriesBC::setElement(Element *element)
+void HydraulicsBC::setElement(Element *element)
 {
   m_element = element;
 }
 
 
-UniformHydraulicsTimeSeriesBC::UniformHydraulicsTimeSeriesBC(Element *startElement, Element *endElement, int variableIndex, HTSModel *model)
+HydraulicsBC::HydraulicsBC(Element *startElement, Element *endElement, int variableIndex, HTSModel *model)
   :AbstractTimeSeriesBC(model),
    m_startElement(startElement),
    m_endElement(endElement),
@@ -71,23 +72,23 @@ UniformHydraulicsTimeSeriesBC::UniformHydraulicsTimeSeriesBC(Element *startEleme
 
 }
 
-UniformHydraulicsTimeSeriesBC::~UniformHydraulicsTimeSeriesBC()
+HydraulicsBC::~HydraulicsBC()
 {
 
 }
 
-void UniformHydraulicsTimeSeriesBC::findAssociatedGeometries()
+void HydraulicsBC::findAssociatedGeometries()
 {
   m_profile.clear();
   m_model->findProfile(m_startElement, m_endElement, m_profile);
 }
 
-void UniformHydraulicsTimeSeriesBC::prepare()
+void HydraulicsBC::prepare()
 {
 
 }
 
-void UniformHydraulicsTimeSeriesBC::applyBoundaryConditions(double dateTime)
+void HydraulicsBC::applyBoundaryConditions(double dateTime)
 {
   bool found ;
   double value = interpolate(dateTime, found);
@@ -115,22 +116,22 @@ void UniformHydraulicsTimeSeriesBC::applyBoundaryConditions(double dateTime)
   }
 }
 
-Element *UniformHydraulicsTimeSeriesBC::startElement() const
+Element *HydraulicsBC::startElement() const
 {
   return m_startElement;
 }
 
-void UniformHydraulicsTimeSeriesBC::setStartElement(Element *element)
+void HydraulicsBC::setStartElement(Element *element)
 {
   m_startElement = element;
 }
 
-Element *UniformHydraulicsTimeSeriesBC::endElement() const
+Element *HydraulicsBC::endElement() const
 {
   return m_endElement;
 }
 
-void UniformHydraulicsTimeSeriesBC::setEndElement(Element *element)
+void HydraulicsBC::setEndElement(Element *element)
 {
   m_endElement = element;
 }

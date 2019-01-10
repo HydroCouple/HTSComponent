@@ -564,6 +564,16 @@ void ElementInput::setVariableType(VariableType variableType)
   m_varType = variableType;
 }
 
+int ElementInput::soluteIndex() const
+{
+  return m_soluteIndex;
+}
+
+void ElementInput::setSoluteIndex(int soluteIndex)
+{
+  m_soluteIndex = soluteIndex;
+}
+
 
 ElementHeatSourceInput::ElementHeatSourceInput(const QString &id,
                                                Dimension *timeDimension,

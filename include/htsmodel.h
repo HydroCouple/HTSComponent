@@ -43,7 +43,7 @@ class Edge;
 class HTSModel;
 class IBoundaryCondition;
 class ThreadSafeNcFile;
-
+class TimeSeries;
 
 struct SolverUserData
 {
@@ -60,11 +60,11 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
 
     friend struct ElementJunction;
     friend struct Element;
-    friend class UniformRadiativeFluxTimeSeriesBC;
-    friend class NonPointSrcTimeSeriesBC;
-    friend class UniformHydraulicsTimeSeriesBC;
+    friend class RadiativeFluxBC;
+    friend class SourceBC;
+    friend class HydraulicsBC;
     friend class UniformMeteorologyTimeSeriesBC;
-    friend class UniformBoundaryCondition;
+    friend class ElementBC;
 
   public:
 
@@ -573,27 +573,13 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
      * \brief readInputFilePointSourcesTag
      * \param line
      */
-    bool readInputFilePointSourcesTag(const QString &line, QString &errorMessage);
-
-    /*!
-     * \brief readInputFileNonPointSourcesTag
-     * \param line
-     */
-    bool readInputFileNonPointSourcesTag(const QString &line, QString &errorMessage);
-
-    /*!
-     * \brief readInputFileUniformHydraulicsTag
-     * \param line
-     * \param errorMessage
-     * \return
-     */
-    bool readInputFileUniformHydraulicsTag(const QString &line, QString &errorMessage);
+    bool readInputFileSourcesTag(const QString &line, QString &errorMessage);
 
     /*!
      * \brief readInputFileNonUniformHydraulicsTag
      * \param line
      */
-    bool readInputFileNonUniformHydraulicsTag(const QString &line, QString &errorMessage);
+    bool readInputFileHydraulicsTag(const QString &line, QString &errorMessage);
 
     /*!
      * \brief readInputFileRadiativeFluxesTag
@@ -601,15 +587,7 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
      * \param errorMessage
      * \return
      */
-    bool readInputFileUniformRadiativeFluxesTag(const QString &line, QString &errorMessage);
-
-    /*!
-     * \brief readInputFileNonUniformRadiativeFluxesTag
-     * \param line
-     * \param errorMessage
-     * \return
-     */
-    bool readInputFileNonUniformRadiativeFluxesTag(const QString &line, QString &errorMessage);
+    bool readInputFileRadiativeFluxesTag(const QString &line, QString &errorMessage);
 
     /*!
      * \brief readInputFileUniformMCBoundaryConditionTag
@@ -617,15 +595,15 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
      * \param errorMessage
      * \return
      */
-    bool readInputFileUniformBoundaryConditionTag(const QString &line, QString &errorMessage);
+    bool readInputFileElementBCTag(const QString &line, QString &errorMessage);
 
     /*!
-     * \brief readInputFileNonUniformMCBoundaryConditionTag
+     * \brief readInputFileTimeSeriesTag
      * \param line
      * \param errorMessage
      * \return
      */
-    bool readInputFileNonUniformBoundaryConditionTag(const QString &line, QString &errorMessage);
+    bool readInputFileTimeSeriesTag(const QString &line, QString &errorMessage);
 
     /*!
      * \brief writeOutput
@@ -672,7 +650,7 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
      * \param m_profile
      * \return
      */
-    bool findProfile(Element *from, Element *to, std::list<Element*> &profile);
+    bool findProfile(Element *from, Element *to, std::vector<Element*> &profile);
 
     /*!
      * \brief calculateDistanceFromUpstreamJunction
@@ -703,10 +681,13 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
     m_totalSoluteMassBalance, // Tracks total mass balance of solutes (kg)
     m_totalExternalSoluteFluxMassBalance, //Tracks total mass balance from external sources (kg)
     m_currTemps,
-    m_outTemps;
+    m_outTemps,
+    m_solute_first_order_k;
 
     std::vector<std::vector<double>> m_currSoluteConcs,
                                      m_outSoluteConcs;
+
+    std::unordered_map<std::string, QSharedPointer<TimeSeries>> m_timeSeries;
 
     int m_numInitFixedTimeSteps, //Number of initial fixed timeSteps of the minimum timestep to use when using the adaptive time step;
     m_numCurrentInitFixedTimeSteps, //Count number of initial minimum timesteps that have been used

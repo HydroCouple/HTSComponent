@@ -17,18 +17,40 @@
 *  \warning
 */
 
-#ifndef BOUNDARYCONDITION_H
-#define BOUNDARYCONDITION_H
+#ifndef ELEMENTBC_H
+#define ELEMENTBC_H
 
-#include "abstracttimeseriesbc.h"
+#include "iboundarycondition.h"
+#include "htscomponent_global.h"
 
-class HTSCOMPONENT_EXPORT BoundaryCondition : public AbstractTimeSeriesBC
+#include <QObject>
+#include <QSharedPointer>
+
+struct Element;
+class TimeSeries;
+class HTSModel;
+class DataCursor;
+
+class HTSCOMPONENT_EXPORT ElementBC: public QObject,
+    public virtual IBoundaryCondition
 {
+    Q_OBJECT
+
   public:
 
-    BoundaryCondition(Element *element, int sourceIndex, int variableIndex, HTSModel *model);
+    enum BCSource
+    {
+      CHANNEL = 1,
+      GROUND = 2
+    };
 
-    virtual ~BoundaryCondition();
+    ElementBC(Element *startElement,
+              Element *endElement,
+              BCSource source,
+              int variableIndex,
+              HTSModel *model);
+
+    virtual ~ElementBC();
 
     void  findAssociatedGeometries() override final;
 
@@ -36,30 +58,7 @@ class HTSCOMPONENT_EXPORT BoundaryCondition : public AbstractTimeSeriesBC
 
     void applyBoundaryConditions(double dateTime) override final;
 
-    Element *element() const;
-
-    void setElement(Element *element);
-
-  private:
-
-    Element *m_element;
-    int m_sourceIndex;
-    int m_variableIndex;
-};
-
-class HTSCOMPONENT_EXPORT UniformBoundaryCondition : public AbstractTimeSeriesBC
-{
-  public:
-
-    UniformBoundaryCondition(Element *startElement, Element *endElement, int sourceIndex, int variableIndex, HTSModel *model);
-
-    virtual ~UniformBoundaryCondition();
-
-    void  findAssociatedGeometries() override final;
-
-    void prepare() override final;
-
-    void applyBoundaryConditions(double dateTime) override final;
+    void clear() override final;
 
     Element *startElement() const;
 
@@ -69,11 +68,18 @@ class HTSCOMPONENT_EXPORT UniformBoundaryCondition : public AbstractTimeSeriesBC
 
     void setEndElement(Element *element);
 
+    QSharedPointer<TimeSeries> timeSeries() const;
+
+    void setTimeSeries(const QSharedPointer<TimeSeries> &timeseries);
+
   private:
-    std::list<Element*> m_profile;
+    std::vector<Element*> m_profile;
     Element *m_startElement, *m_endElement;
-    int m_sourceIndex;
+    BCSource m_source;
     int m_variableIndex;
+    DataCursor *m_dataCursor;
+    QSharedPointer<TimeSeries> m_timeSeries;
+    HTSModel *m_model;
 };
 
-#endif // BOUNDARYCONDITION_H
+#endif // ELEMENTBC_H

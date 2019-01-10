@@ -92,7 +92,7 @@ void ElementOutput::updateValues()
 
   switch (m_variableType)
   {
-    case AdvectionHeat:
+    case ChannelAdvectionHeat:
       {
 
 //#ifdef USE_OPENMP
@@ -101,7 +101,7 @@ void ElementOutput::updateValues()
         for(size_t i = 0 ; i < m_geometries.size() ; i++)
         {
           Element *element = m_component->modelInstance()->getElement(i);
-          double value = -element->advectionHeat;
+          double value = -element->mainChannelAdvectionHeat;
           setValue(currentTimeIndex,i,&value);
         }
       }
@@ -180,6 +180,32 @@ void ElementOutput::updateValues()
         {
           Element *element = m_component->modelInstance()->getElement(i);
           double value = element->groundConductionDepth;
+          setValue(currentTimeIndex,i,&value);
+        }
+      }
+      break;
+    case ChannelSoluteAdvectionFlux:
+      {
+//#ifdef USE_OPENMP
+//#pragma omp parallel for
+//#endif
+        for(size_t i = 0 ; i < m_geometries.size() ; i++)
+        {
+          Element *element = m_component->modelInstance()->getElement(i);
+          double value = element->mainChannelSoluteAdvectionFlux[m_soluteIndex] * element->xSectionArea * element->length;
+          setValue(currentTimeIndex,i,&value);
+        }
+      }
+      break;
+    case ChannelSoluteDiffusionFlux:
+      {
+//#ifdef USE_OPENMP
+//#pragma omp parallel for
+//#endif
+        for(size_t i = 0 ; i < m_geometries.size() ; i++)
+        {
+          Element *element = m_component->modelInstance()->getElement(i);
+          double value = element->mainChannelSoluteDiffusionFlux[m_soluteIndex] * element->xSectionArea * element->length;
           setValue(currentTimeIndex,i,&value);
         }
       }

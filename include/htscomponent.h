@@ -31,6 +31,7 @@ class ElementInput;
 class ElementOutput;
 class Unit;
 class ElementHeatSourceInput;
+class Quantity;
 
 class HTSCOMPONENT_EXPORT HTSComponent : public AbstractTimeModelComponent,
     public virtual HydroCouple::ICloneableModelComponent
@@ -192,6 +193,13 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractTimeModelComponent,
     void createExternalHeatFluxInput();
 
     /*!
+     * \brief createSoluteConcInput
+     * \param soluteIndex
+     */
+    void createMainChannelSoluteConcInput(int soluteIndex);
+
+
+    /*!
      * \brief createOutputs
      */
     void createOutputs() override;
@@ -205,6 +213,20 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractTimeModelComponent,
      * \brief createMainChannelAdvectionHeatOutput
      */
     void createMainChannelAdvectionHeatOutput();
+
+    /*!
+     * \brief createMainChannelSoluteDiffFluxOutput
+     * \param soluteIndex
+     */
+    void createMainChannelSoluteDiffFluxOutput(int soluteIndex);
+
+
+    /*!
+     * \brief createMainChannelSoluteAdvFluxOutput
+     * \param soluteIndex
+     */
+    void createMainChannelSoluteAdvFluxOutput(int soluteIndex);
+
 
   private:
 
@@ -224,7 +246,12 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractTimeModelComponent,
     Unit *m_radiationFluxUnit,
          *m_heatFluxUnit,
          *m_temperatureUnit,
-         *m_diffCoeffUnit;
+         *m_diffCoeffUnit,
+         *m_soluteUnit,
+         *m_soluteFluxUnit;
+
+    Quantity *m_soluteConcQuantity,
+             *m_soluteConcFluxQuantity;
 
     ElementOutput *m_mainChannelConductionHeat,
                   *m_mainChannelAdvectionHeat;

@@ -36,13 +36,15 @@ class HTSCOMPONENT_EXPORT ElementOutput: public TimeGeometryOutputDouble
 
     enum VariableType
     {
-      AdvectionHeat,
+      ChannelAdvectionHeat,
       ChannelConductionHeat,
       QHTS,
       YHTS,
       AlphaSed,
       GroundTemperature,
-      GroundConductionDepth
+      GroundConductionDepth,
+      ChannelSoluteDiffusionFlux,
+      ChannelSoluteAdvectionFlux
     };
 
     ElementOutput(const QString &id,

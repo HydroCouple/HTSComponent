@@ -16,7 +16,7 @@
 *  \todo
 *  \warning
 */
-
+#include "stdafx.h"
 #include "htsmodel.h"
 #include "htscomponent.h"
 #include "spatial/point.h"
@@ -225,6 +225,7 @@ void HTSModel::setNumSolutes(int numSolutes)
     m_minSolute.resize(numSolutes);
     m_totalSoluteMassBalance.resize(numSolutes);
     m_totalExternalSoluteFluxMassBalance.resize(numSolutes);
+    m_solute_first_order_k.resize(numSolutes, 0.0);
 
     for(size_t i = 0 ; i < m_solutes.size(); i++)
     {
@@ -544,20 +545,28 @@ bool HTSModel::initializeBoundaryConditions(std::list<string> &errors)
   return true;
 }
 
-bool HTSModel::findProfile(Element *from, Element *to, std::list<Element *> &profile)
+bool HTSModel::findProfile(Element *from, Element *to, std::vector<Element *> &profile)
 {
-  for(Element *outgoing : from->downstreamJunction->outgoingElements)
+  if(from == to)
   {
-    if(outgoing == to)
+    profile.push_back(from);
+    return true;
+  }
+  else
+  {
+    for(Element *outgoing : from->downstreamJunction->outgoingElements)
     {
-      profile.push_back(from);
-      profile.push_back(outgoing);
-      return true;
-    }
-    else if(findProfile(outgoing, to, profile))
-    {
-      profile.push_front(from);
-      return true;
+      if(outgoing == to)
+      {
+        profile.push_back(from);
+        profile.push_back(outgoing);
+        return true;
+      }
+      else if(findProfile(outgoing, to, profile))
+      {
+        profile.insert(profile.begin(), from);
+        return true;
+      }
     }
   }
 
