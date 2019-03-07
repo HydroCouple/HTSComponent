@@ -727,8 +727,9 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
     double m_waterDensity, //kg/m^3
     m_cp,// Water specific heat capacity default = 4187.0; // J/kg/C,
     m_sedDensity, //Sediment density //kg/m^3
-    m_sedCp, //Sediment specific heat capacity// J/kg/C,
-    m_totalHeatBalance, //Tracks total heat accumulation (KJ)
+    m_sedCp; //Sediment specific heat capacity// J/kg/C,
+
+    float m_totalHeatBalance, //Tracks total heat accumulation (KJ)
     m_totalRadiationHeatBalance, //Track total heat accumulation from radiation (KJ)
     m_totalExternalHeatFluxBalance;//Track total heat accumulation from external heat sources (KJ)
 

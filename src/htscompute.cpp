@@ -217,20 +217,23 @@ void HTSModel::solveHeatTransport(double timeStep)
   SolverUserData solverUserData; solverUserData.model = this; solverUserData.variableIndex = -1;
 
   if(m_heatSolver->solve(m_currTemps.data(), m_elements.size() , m_currentDateTime * 86400.0, timeStep,
-                  m_outTemps.data(), &HTSModel::computeDTDt, &solverUserData))
+                         m_outTemps.data(), &HTSModel::computeDTDt, &solverUserData))
   {
+    m_currentDateTime = m_endDateTime;
     printf("HTS Temperature Solver failed \n");
   }
-
-  //Apply computed values;
+  else
+  {
+    //Apply computed values;
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-  for(size_t i = 0 ; i < m_elements.size(); i++)
-  {
-    Element *element = m_elements[i];
-    double outputTemperature = m_outTemps[element->index];
-    element->temperature.value = outputTemperature;
+    for(size_t i = 0 ; i < m_elements.size(); i++)
+    {
+      Element *element = m_elements[i];
+      double outputTemperature = m_outTemps[element->index];
+      element->temperature.value = outputTemperature;
+    }
   }
 }
 
@@ -254,7 +257,7 @@ void HTSModel::solveSoluteTransport(int soluteIndex, double timeStep)
   SolverUserData solverUserData; solverUserData.model = this; solverUserData.variableIndex = soluteIndex;
 
   if(m_soluteSolvers[soluteIndex]->solve(outputSoluteConcs.data(), m_elements.size() , m_currentDateTime * 86400.0, timeStep,
-                  outputSoluteConcs.data(), &HTSModel::computeDSoluteDt, &solverUserData))
+                                         outputSoluteConcs.data(), &HTSModel::computeDSoluteDt, &solverUserData))
   {
     printf("HTS Solute Solver failed \n");
   }
