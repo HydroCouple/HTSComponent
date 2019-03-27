@@ -206,7 +206,7 @@ void HTSModel::solveHeatTransport(double timeStep)
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-  for(size_t i = 0 ; i < m_elements.size(); i++)
+  for(int i = 0; i < (int)m_elements.size(); i++)
   {
     Element *element = m_elements[i];
     m_currTemps[element->index] = element->temperature.value;
@@ -228,7 +228,7 @@ void HTSModel::solveHeatTransport(double timeStep)
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-    for(size_t i = 0 ; i < m_elements.size(); i++)
+    for(int i = 0 ; i < (int)m_elements.size(); i++)
     {
       Element *element = m_elements[i];
       double outputTemperature = m_outTemps[element->index];
@@ -246,7 +246,7 @@ void HTSModel::solveSoluteTransport(int soluteIndex, double timeStep)
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-  for(size_t i = 0 ; i < m_elements.size(); i++)
+  for(int i = 0 ; i < (int)m_elements.size(); i++)
   {
     Element *element = m_elements[i];
     currentSoluteConcs[element->index] = element->soluteConcs[soluteIndex].value;
@@ -266,7 +266,7 @@ void HTSModel::solveSoluteTransport(int soluteIndex, double timeStep)
 #ifdef USE_OPENMP
 #pragma omp parallel for
 #endif
-  for(size_t i = 0 ; i < m_elements.size(); i++)
+  for(int i = 0; i < (int)m_elements.size(); i++)
   {
     Element *element = m_elements[i];
     element->soluteConcs[soluteIndex].value = outputSoluteConcs[element->index];
