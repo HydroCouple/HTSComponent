@@ -55,7 +55,7 @@ class HTSCOMPONENT_EXPORT ElementOutput: public TimeGeometryOutputDouble
                   HTSComponent *modelComponent);
 
 
-    virtual ~ElementOutput();
+    virtual ~ElementOutput() override;
 
     void updateValues(HydroCouple::IInput *querySpecifier) override;
 

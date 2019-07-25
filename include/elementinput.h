@@ -54,6 +54,11 @@ class HTSCOMPONENT_EXPORT ElementInput : public TimeGeometryMultiInputDouble
                  VariableType varType,
                  HTSComponent *modelComponent);
 
+    virtual ~ElementInput() override
+    {
+
+    }
+
     /*!
      * \brief setProvider
      * \param provider
@@ -121,6 +126,8 @@ class HTSCOMPONENT_EXPORT ElementInput : public TimeGeometryMultiInputDouble
 
 class HTSCOMPONENT_EXPORT ElementHeatSourceInput : public  TimeGeometryMultiInputDouble
 {
+    Q_OBJECT
+
   public:
 
     enum SourceType

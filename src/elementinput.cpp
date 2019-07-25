@@ -11,6 +11,7 @@
 
 using namespace HydroCouple;
 using namespace HydroCouple::Spatial;
+using namespace HydroCouple::Temporal;
 using namespace HydroCouple::SpatioTemporal;
 
 
@@ -35,6 +36,8 @@ bool ElementInput::addProvider(HydroCouple::IOutput *provider)
   {
     ITimeGeometryComponentDataItem *timeGeometryDataItem = nullptr;
     IGeometryComponentDataItem *geometryDataItem = nullptr;
+    ITimeIdBasedComponentDataItem *timeIdBasedDataItem = nullptr;
+    IIdBasedComponentDataItem *idBasedDataItem = nullptr;
 
     if((timeGeometryDataItem = dynamic_cast<ITimeGeometryComponentDataItem*>(provider)) &&
        timeGeometryDataItem->geometryCount())
@@ -132,6 +135,60 @@ bool ElementInput::addProvider(HydroCouple::IOutput *provider)
         }
       }
     }
+    else if((timeIdBasedDataItem = dynamic_cast<ITimeIdBasedComponentDataItem*>(provider)))
+    {
+      QStringList identifiers = timeIdBasedDataItem->identifiers();
+
+      std::vector<bool> mapped(identifiers.size(), false);
+
+      for(int i = 0; i < geometryCount() ; i++)
+      {
+        Element *element = m_component->modelInstance()->getElement(i);
+
+        for(int j = 0; j < identifiers.size() ; j++)
+        {
+          if(!mapped[j])
+          {
+            QString providerId = identifiers[j];
+
+            if(element->id == providerId.toStdString())
+            {
+              m_geometryMapping[provider][i] = j;
+              m_geometryMappingOrientation[provider][i] = 1.0;
+              mapped[j] = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+    else if((idBasedDataItem = dynamic_cast<IIdBasedComponentDataItem*>(provider)))
+    {
+      QStringList identifiers = idBasedDataItem->identifiers();
+
+      std::vector<bool> mapped(identifiers.size(), false);
+
+      for(int i = 0; i < geometryCount() ; i++)
+      {
+        Element *element = m_component->modelInstance()->getElement(i);
+
+        for(int j = 0; j < identifiers.size() ; j++)
+        {
+          if(!mapped[j])
+          {
+            QString providerId = identifiers[j];
+
+            if(element->id == providerId.toStdString())
+            {
+              m_geometryMapping[provider][i] = j;
+              m_geometryMappingOrientation[provider][i] = 1.0;
+              mapped[j] = true;
+              break;
+            }
+          }
+        }
+      }
+    }
 
     return true;
   }
@@ -155,6 +212,8 @@ bool ElementInput::canConsume(HydroCouple::IOutput *provider, QString &message) 
 {
   ITimeGeometryComponentDataItem *timeGeometryDataItem = nullptr;
   IGeometryComponentDataItem *geometryDataItem = nullptr;
+  ITimeIdBasedComponentDataItem *timeIdBasedDataItem = nullptr;
+  IIdBasedComponentDataItem *idBasedDataItem = nullptr;
 
   if((timeGeometryDataItem = dynamic_cast<ITimeGeometryComponentDataItem*>(provider)) &&
      (timeGeometryDataItem->geometryType() == IGeometry::LineString ||
@@ -169,6 +228,18 @@ bool ElementInput::canConsume(HydroCouple::IOutput *provider, QString &message) 
           (geometryDataItem->geometryType() == IGeometry::LineString ||
            geometryDataItem->geometryType() == IGeometry::LineStringZ ||
            geometryDataItem->geometryType() == IGeometry::LineStringZM) &&
+          (provider->valueDefinition()->type() == QVariant::Double ||
+           provider->valueDefinition()->type() == QVariant::Int))
+  {
+    return true;
+  }
+  else if((timeIdBasedDataItem = dynamic_cast<ITimeIdBasedComponentDataItem*>(provider)) &&
+          (provider->valueDefinition()->type() == QVariant::Double ||
+           provider->valueDefinition()->type() == QVariant::Int))
+  {
+    return true;
+  }
+  else if((idBasedDataItem = dynamic_cast<IIdBasedComponentDataItem*>(provider)) &&
           (provider->valueDefinition()->type() == QVariant::Double ||
            provider->valueDefinition()->type() == QVariant::Int))
   {
@@ -203,6 +274,8 @@ void ElementInput::applyData()
 
     ITimeGeometryComponentDataItem *timeGeometryDataItem = nullptr;
     IGeometryComponentDataItem *geometryDataItem = nullptr;
+    ITimeIdBasedComponentDataItem *timeIdBasedDataItem = nullptr;
+    IIdBasedComponentDataItem *idBasedDataItem = nullptr;
 
     if((timeGeometryDataItem = dynamic_cast<ITimeGeometryComponentDataItem*>(provider)))
     {
@@ -544,6 +617,353 @@ void ElementInput::applyData()
             {
               double value = 0;
               geometryDataItem->getValue(it.second, & value);
+              Element *element =  m_component->modelInstance()->getElement(it.first);
+              element->groundConductionDepth = value;
+            }
+          }
+          break;
+      }
+    }
+    else if((timeIdBasedDataItem = dynamic_cast<ITimeIdBasedComponentDataItem*>(provider)))
+    {
+      int currentTimeIndex = timeIdBasedDataItem->timeCount() - 1;
+      int previousTimeIndex = std::max(0 , timeIdBasedDataItem->timeCount() - 2);
+
+      double providerCurrentTime = timeIdBasedDataItem->time(currentTimeIndex)->julianDay();
+      double providerPreviousTime = timeIdBasedDataItem->time(previousTimeIndex)->julianDay();
+
+      if(currentTime >=  providerPreviousTime && currentTime <= providerCurrentTime)
+      {
+
+        double factor = 0.0;
+
+        if(providerCurrentTime > providerPreviousTime)
+        {
+          double denom = providerCurrentTime - providerPreviousTime;
+          double numer = currentTime - providerPreviousTime;
+          factor = numer / denom;
+        }
+
+        switch (m_varType)
+        {
+          case MainChannelTemperature:
+            {
+              for(auto it : geomap)
+              {
+                double value1 = 0;
+                double value2 = 0;
+
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, &value1);
+                timeIdBasedDataItem->getValue(previousTimeIndex,it.second, &value2);
+
+                double orientation = geoorient[it.first];
+                value1 *= orientation;
+                value2 *= orientation;
+
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->mainChannelTemperature = value2 + factor *(value1 - value2);
+
+              }
+            }
+            break;
+          case MainChannelSoluteConc:
+            {
+              for(auto it : geomap)
+              {
+                double value1 = 0;
+                double value2 = 0;
+
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, &value1);
+                timeIdBasedDataItem->getValue(previousTimeIndex,it.second, &value2);
+
+                double orientation = geoorient[it.first];
+                value1 *= orientation;
+                value2 *= orientation;
+
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->mainChannelSoluteConcs[m_soluteIndex] = value2 + factor *(value1 - value2);
+
+              }
+            }
+            break;
+          case Width:
+            {
+              for(auto it : geomap)
+              {
+                double value1 = 0;
+                double value2 = 0;
+
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, &value1);
+                timeIdBasedDataItem->getValue(previousTimeIndex,it.second, &value2);
+
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->width = value2 + factor *(value1 - value2);
+              }
+            }
+            break;
+          case QHTS:
+            {
+              for(auto it : geomap)
+              {
+                double value1 = 0;
+                double value2 = 0;
+
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, &value1);
+                timeIdBasedDataItem->getValue(previousTimeIndex,it.second, &value2);
+
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->mainChannelAdvectionCoeff = value2 + factor *(value1 - value2);
+              }
+            }
+            break;
+          case YHTS:
+            {
+              for(auto it : geomap)
+              {
+                double value1 = 0;
+                double value2 = 0;
+
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, &value1);
+                timeIdBasedDataItem->getValue(previousTimeIndex,it.second, &value2);
+
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->depth = value2 + factor *(value1 - value2);
+              }
+            }
+            break;
+          case AlphaSed:
+            {
+              for(auto it : geomap)
+              {
+                double value1 = 0;
+                double value2 = 0;
+
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, &value1);
+                timeIdBasedDataItem->getValue(previousTimeIndex,it.second, &value2);
+
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->sedThermalDiffCoefficient = value2 + factor *(value1 - value2);
+              }
+            }
+            break;
+          case GroundTemperature:
+            {
+              for(auto it : geomap)
+              {
+                double value1 = 0;
+                double value2 = 0;
+
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, &value1);
+                timeIdBasedDataItem->getValue(previousTimeIndex,it.second, &value2);
+
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->groundTemperature = value2 + factor *(value1 - value2);
+              }
+            }
+            break;
+          case GroundConductionDepth:
+            {
+              for(auto it : geomap)
+              {
+                double value1 = 0;
+                double value2 = 0;
+
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, &value1);
+                timeIdBasedDataItem->getValue(previousTimeIndex,it.second, &value2);
+
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->groundConductionDepth = value2 + factor *(value1 - value2);
+              }
+            }
+            break;
+        }
+      }
+      else
+      {
+        switch (m_varType)
+        {
+          case MainChannelTemperature:
+            {
+              for(auto it : geomap)
+              {
+                double value = 0;
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, & value);
+                value *= geoorient[it.first];
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->mainChannelTemperature = value;
+              }
+            }
+            break;
+          case MainChannelSoluteConc:
+            {
+              for(auto it : geomap)
+              {
+                double value = 0;
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, & value);
+                value *= geoorient[it.first];
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->mainChannelSoluteConcs[m_soluteIndex] = value;
+              }
+            }
+            break;
+          case Width:
+            {
+              for(auto it : geomap)
+              {
+                double value = 0;
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, & value);
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->width = value;
+              }
+            }
+            break;
+          case QHTS:
+            {
+              for(auto it : geomap)
+              {
+                double value = 0;
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, & value);
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->mainChannelAdvectionCoeff = value;
+              }
+            }
+            break;
+          case YHTS:
+            {
+              for(auto it : geomap)
+              {
+                double value = 0;
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, & value);
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->depth = value;
+              }
+            }
+            break;
+          case AlphaSed:
+            {
+              for(auto it : geomap)
+              {
+                double value = 0;
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, & value);
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->sedThermalDiffCoefficient = value;
+              }
+            }
+            break;
+          case GroundTemperature:
+            {
+              for(auto it : geomap)
+              {
+                double value = 0;
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, & value);
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->groundTemperature = value;
+              }
+            }
+            break;
+          case GroundConductionDepth:
+            {
+              for(auto it : geomap)
+              {
+                double value = 0;
+                timeIdBasedDataItem->getValue(currentTimeIndex,it.second, & value);
+                Element *element =  m_component->modelInstance()->getElement(it.first);
+                element->groundConductionDepth = value;
+              }
+            }
+            break;
+        }
+      }
+    }
+    else if((idBasedDataItem = dynamic_cast<IIdBasedComponentDataItem*>(provider)))
+    {
+      switch (m_varType)
+      {
+        case MainChannelTemperature:
+          {
+            for(auto it : geomap)
+            {
+              double value = 0;
+              idBasedDataItem->getValue(it.second, & value);
+              value *= geoorient[it.first];
+              Element *element =  m_component->modelInstance()->getElement(it.first);
+              element->mainChannelTemperature = value;
+            }
+          }
+          break;
+        case MainChannelSoluteConc:
+          {
+            for(auto it : geomap)
+            {
+              double value = 0;
+              idBasedDataItem->getValue(it.second, & value);
+              value *= geoorient[it.first];
+              Element *element =  m_component->modelInstance()->getElement(it.first);
+              element->mainChannelSoluteConcs[m_soluteIndex] = value;
+            }
+          }
+          break;
+        case Width:
+          {
+            for(auto it : geomap)
+            {
+              double value = 0;
+              idBasedDataItem->getValue(it.second, & value);
+              Element *element =  m_component->modelInstance()->getElement(it.first);
+              element->width = value;
+            }
+          }
+          break;
+        case QHTS:
+          {
+            for(auto it : geomap)
+            {
+              double value = 0;
+              idBasedDataItem->getValue(it.second, & value);
+              Element *element =  m_component->modelInstance()->getElement(it.first);
+              element->mainChannelAdvectionCoeff = value;
+            }
+          }
+          break;
+        case YHTS:
+          {
+            for(auto it : geomap)
+            {
+              double value = 0;
+              idBasedDataItem->getValue(it.second, & value);
+              Element *element =  m_component->modelInstance()->getElement(it.first);
+              element->depth = value;
+            }
+          }
+          break;
+        case AlphaSed:
+          {
+            for(auto it : geomap)
+            {
+              double value = 0;
+              idBasedDataItem->getValue(it.second, & value);
+              Element *element =  m_component->modelInstance()->getElement(it.first);
+              element->sedThermalDiffCoefficient = value;
+            }
+          }
+          break;
+        case GroundTemperature:
+          {
+            for(auto it : geomap)
+            {
+              double value = 0;
+              idBasedDataItem->getValue(it.second, & value);
+              Element *element =  m_component->modelInstance()->getElement(it.first);
+              element->groundTemperature = value;
+            }
+          }
+          break;
+        case GroundConductionDepth:
+          {
+            for(auto it : geomap)
+            {
+              double value = 0;
+              idBasedDataItem->getValue(it.second, & value);
               Element *element =  m_component->modelInstance()->getElement(it.first);
               element->groundConductionDepth = value;
             }

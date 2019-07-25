@@ -49,3 +49,4 @@ CMakeLists.txt.user*
 *.json
 *.json
 *.json
+.DS_Store

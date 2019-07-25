@@ -53,7 +53,7 @@ class HTSCOMPONENT_EXPORT HTSComponent : public AbstractTimeModelComponent,
     /*!
      * \brief ~HTSComponent destructor
      */
-    virtual ~HTSComponent();
+    virtual ~HTSComponent()  override;
 
     /*!
      * \brief validate validates this component model instance

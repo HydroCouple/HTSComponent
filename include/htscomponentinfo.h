@@ -33,7 +33,7 @@ class HTSCOMPONENT_EXPORT HTSComponentInfo : public AbstractModelComponentInfo
 
     HTSComponentInfo(QObject *parent = nullptr);
 
-    virtual ~HTSComponentInfo();
+    virtual ~HTSComponentInfo()  override;
 
     HydroCouple::IModelComponent* createComponentInstance() override;
 };
