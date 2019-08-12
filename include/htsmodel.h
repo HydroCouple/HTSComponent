@@ -52,6 +52,7 @@ struct SolverUserData
 };
 
 typedef void (*RetrieveCouplingData)(HTSModel *model, double dateTime);
+typedef void (*WriteVariableToNetCDF)(size_t currentTime, ThreadSafeNcVar &variable, const std::vector<Element*>& elements);
 
 
 class HTSCOMPONENT_EXPORT HTSModel : public QObject
@@ -606,6 +607,14 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
     bool readInputFileTimeSeriesTag(const QString &line, QString &errorMessage);
 
     /*!
+     * \brief readOutputVariableOnOff
+     * \param line
+     * \param errorMessage
+     * \return
+     */
+    bool readOutputVariableOnOff(const QString &line, QString &errorMessage);
+
+    /*!
      * \brief writeOutput
      */
     void writeOutput();
@@ -741,6 +750,9 @@ class HTSCOMPONENT_EXPORT HTSModel : public QObject
 #ifdef USE_NETCDF
      ThreadSafeNcFile *m_outputNetCDF = nullptr; //NetCDF output file object
      std::unordered_map<std::string, ThreadSafeNcVar> m_outNetCDFVariables;
+     std::unordered_map<std::string, bool> m_outNetCDFVariablesOnOff;
+     std::unordered_map<std::string, WriteVariableToNetCDF> m_outNetCDFVariablesIOFunctions;
+     std::vector<std::string> m_optionalOutputVariables;
 #endif
 
     QTextStream m_outputCSVStream; //Output CSV filestream
