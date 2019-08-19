@@ -195,7 +195,6 @@ bool HTSModel::initializeInputFiles(list<string> &errors)
             errors.push_back("Line " + std::to_string(lineCount) + " : " + error.toStdString());
             file.close();
             return false;
-            break;
           }
         }
       }
@@ -608,7 +607,6 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
 
     }
 
-
     if((m_outNetCDFVariablesOnOff["total_radiation_flux_heat_balance"] = varOnOff("total_radiation_flux_heat_balance"))){
 
       ThreadSafeNcVar totalRadiationFluxHeatBalanceVar =  m_outputNetCDF->addVar("total_radiation_flux_heat_balance", "float",
@@ -698,8 +696,8 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
         m_outNetCDFVariables["solute_concentration"] = solutesVar;
         m_outNetCDFVariablesIOFunctions["solute_concentration"] = [](size_t currentTime, ThreadSafeNcVar &variable, const std::vector<Element*>& elements)
         {
-          float *solute_concentration = new float[elements.size()];
           int numSolutes = elements[0]->numSolutes;
+          float *solute_concentration = new float[elements.size() * numSolutes];
 
           for (size_t i = 0; i < elements.size(); i++)
           {
@@ -707,7 +705,7 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
 
             for(int j = 0 ; j < numSolutes; j++)
             {
-              solute_concentration[i] = static_cast<float>(element->soluteConcs[j].value);
+              solute_concentration[i + j * elements.size()] = static_cast<float>(element->soluteConcs[j].value);
             }
           }
           variable.putVar(std::vector<size_t>({currentTime, 0, 0}), std::vector<size_t>({1, (size_t)numSolutes, elements.size()}), solute_concentration);
@@ -724,8 +722,8 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
         m_outNetCDFVariables["total_element_solute_mass_balance"] = totalElementSoluteMassBalanceVar;
         m_outNetCDFVariablesIOFunctions["total_element_solute_mass_balance"] = [](size_t currentTime, ThreadSafeNcVar &variable, const std::vector<Element*>& elements)
         {
-          float *total_element_solute_mass_balance = new float[elements.size()];
           int numSolutes = elements[0]->numSolutes;
+          float *total_element_solute_mass_balance = new float[elements.size() * numSolutes];
 
           for (size_t i = 0; i < elements.size(); i++)
           {
@@ -733,7 +731,7 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
 
             for(int j = 0 ; j < numSolutes; j++)
             {
-              total_element_solute_mass_balance[i] = static_cast<float>(element->totalSoluteMassBalance[j]);
+              total_element_solute_mass_balance[i + j * elements.size()] = static_cast<float>(element->totalSoluteMassBalance[j]);
             }
           }
           variable.putVar(std::vector<size_t>({currentTime, 0, 0}), std::vector<size_t>({1, (size_t)numSolutes, elements.size()}), total_element_solute_mass_balance);
