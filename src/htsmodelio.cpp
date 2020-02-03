@@ -604,7 +604,6 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
       totalHeatBalanceVar.putAtt("long_name", "Total Heat Balance");
       totalHeatBalanceVar.putAtt("units", "KJ");
       m_outNetCDFVariables["total_heat_balance"] = totalHeatBalanceVar;
-
     }
 
     if((m_outNetCDFVariablesOnOff["total_radiation_flux_heat_balance"] = varOnOff("total_radiation_flux_heat_balance"))){
@@ -773,7 +772,7 @@ bool HTSModel::initializeNetCDFOutputFile(list<string> &errors)
 
     for (const auto& pair : m_outNetCDFVariablesOnOff)
     {
-      if(pair.second)
+      if(pair.second && (m_outNetCDFVariablesIOFunctions.find(pair.first) != m_outNetCDFVariablesIOFunctions.end()))
         m_optionalOutputVariables.push_back(pair.first);
     }
 
